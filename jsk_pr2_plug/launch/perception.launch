@@ -8,7 +8,7 @@
     <param name="grid0_size_x" value="6" />
     <param name="grid0_size_y" value="5" />
     <param name="type0" value="outlet" />
-    <param name="translation0" value="-0.38 -0.04 -0.00" />
+    <param name="translation0" value="-0.390 -0.022 -0.011" />
     <param name="rotation0" value="0.0" />
     <node name="outlet_detector"
           pkg="checkerboard_detector" type="checkerboard_detector">
