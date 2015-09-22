@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(jsk_pr2_plug)
+project(jsk_pr2_plugs)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -103,7 +103,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES jsk_pr2_plug
+#  LIBRARIES jsk_pr2_plugs
 #  CATKIN_DEPENDS checkerboard_detector jsk_perception jsk_pr2_startup pr2eus rospy
 #  DEPENDS system_lib
 )
@@ -120,24 +120,24 @@ include_directories(
 )
 
 ## Declare a C++ library
-# add_library(jsk_pr2_plug
-#   src/${PROJECT_NAME}/jsk_pr2_plug.cpp
+# add_library(jsk_pr2_plugs
+#   src/${PROJECT_NAME}/jsk_pr2_plugs.cpp
 # )
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-# add_dependencies(jsk_pr2_plug ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(jsk_pr2_plugs ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(jsk_pr2_plug_node src/jsk_pr2_plug_node.cpp)
+# add_executable(jsk_pr2_plugs_node src/jsk_pr2_plugs_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
-# add_dependencies(jsk_pr2_plug_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+# add_dependencies(jsk_pr2_plugs_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(jsk_pr2_plug_node
+# target_link_libraries(jsk_pr2_plugs_node
 #   ${catkin_LIBRARIES}
 # )
 
@@ -156,7 +156,7 @@ include_directories(
 # )
 
 ## Mark executables and/or libraries for installation
-# install(TARGETS jsk_pr2_plug jsk_pr2_plug_node
+# install(TARGETS jsk_pr2_plugs jsk_pr2_plugs_node
 #   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -181,7 +181,7 @@ include_directories(
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_jsk_pr2_plug.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_jsk_pr2_plugs.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

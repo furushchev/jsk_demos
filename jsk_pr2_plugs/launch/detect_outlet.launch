@@ -1,0 +1,16 @@
+<launch>
+  <arg name="ROBOT" default="$(env ROBOT)" />
+
+  <include file="$(find pr2_machine)/$(arg ROBOT).machine" />
+
+  <include file="$(find jsk_2013_04_pr2_610)/launch/detect_with_image.launch">
+    <arg name="camera" value="/narrow_stereo/left"/>
+    <arg name="object" value="outlet" />
+    <arg name="window_name" value="outlet" />
+    <arg name="template_filename" value="$(find jsk_pr2_plugs)/data/pr2_dock_logo.jpg" />
+    <arg name="object_width" value="0.165" />
+    <arg name="object_height" value="0.165" />
+    <arg name="relative_pose" value="0.8 0.15 0.16 0 0.1 0" />
+    <arg name="viewer_window" value="true" />
+  </include>
+</launch>

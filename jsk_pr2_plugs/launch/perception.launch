@@ -1,0 +1,4 @@
+<launch>
+  <!-- outlet detector -->
+  <include file="$(find jsk_pr2_plugs)/launch/detect_outlet.launch" />
+</launch>

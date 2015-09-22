@@ -6,6 +6,7 @@
 (require :pr2-move "package://jsk_demo_common/euslisp/pr2-move.l")
 
 (defparameter *detection-topic* "/narrow_stereo/left/ObjectDetection")
+(defparameter *outlet* nil)
 
 (defun charge-init ()
   (setq *scene* (make-eng2-scene))
@@ -13,15 +14,34 @@
 
 (defun go-to-charge-spot ()
   (pr2-tuckarm-pose)
-  (move-to-spot "eng2/7f/room73B2-charge-spot1")
+  (move-to-spot "/eng2/7f/room73B2-charge-spot1")
   (pr2-reset-pose)
   )
 
 (defun look-at-outlet (&key (dp 0.0) (dy 0.0))
-  (send *pr2* :head :neck-p :joint-angle (+ 26 dp)
-  (send *pr2* :head :neck-y :joint-angle (+ -117.671 dy))
+  (send *pr2* :head :neck-p :joint-angle (+ 20.0 dp))
+;;  (send *pr2* :head :neck-y :joint-angle (+ -117.671 dy))
   (send *ri* :angle-vector (send *pr2* :angle-vector))
   (send *ri* :wait-interpolation))
+
+(defun detect-outlet ()
+  (let ((dp 0.0)
+        (dy 0.0))
+    ;; detect outlet
+    (dotimes (i 5)
+      (look-at-outlet :dp dp :dy dy)
+      (setq *outlet*
+            (check-detection :type "outlet"
+                             :speak-name "konsento"
+                             :timeout 20
+                             :speak t))
+      (when *outlet*
+        (return-from detect-outlet t))
+      ;; look around on failure
+      (setq dp (- (random 10.0) 5.0))
+      (setq dy (- (random 10.0) 5.0)))))
+
+
 
 (defun pick-plug ()
   ;; pre-pick pose
@@ -45,25 +65,14 @@
   )
 
 (defun connect-plug ()
-  (let ((dp 0.0)
-        (dy 0.0)
-        outlet)
-    ;; detect outlet
-    (dotimes (i 5)
-      (look-at-outlet :dp dp :dy dy)
-      (setq outlet
-            (check-detection :type "outlet"
-                             :speak-name "konsento"
-                             :timeout 10
-                             :speak t))
-      (when outlet
-        (return))
-      ;; look around on failure
-      (setq dp (- (random 10.0) 5.0))
-      (setq dy (- (random 10.0) 5.0)))
+  (send *pr2* :rotate pi/2 :z)
+  (send *ri* :go-pos-unsafe 0 0 90)
+
+;;  (send *pr2* :translate #f(0 -200 0) *pr2*)
+;;  (send *ri* :go-pos-unsafe 0.0 -0.3)
 
   ;; move plug to outlet
-  (let (avs)
+  (let (avs (z-offset 100))
     (push
      (send *pr2* :rarm :inverse-kinematics
            (send 
@@ -83,77 +92,29 @@
     (push
      (send *pr2* :rarm :inverse-kinematics
            (send
-            (send outlet :copy-worldcoords)
-            :translate #f(0 0 -100) outlet)
-           :rotation-axis :z
+            (send *outlet* :copy-worldcoords)
+            :translate (float-vector 0 0 z-offset) *outlet*)
+           :rotation-axis t
            :use-torso t
            :look-at-target t)
      avs)
     (send *ri* :angle-vector-sequence
           (reverse avs) (list 3000 2000 4000))
-    (send *ri* :wait-interpolation))
-
-  (dotimes (i 5)
-    ;; connect plug
-    (send *pr2* :rarm :inverse-kinematics
-          (send
-           (send outlet :copy-worldcoords)
-           :translate #f(0 0 -70) outlet)
-          :rotation-axis :z
-          :use-torso t
-          :look-at-target t)
-    (send *ri* :angle-vector (send *pr2* :angle-vector) 5000)
     (send *ri* :wait-interpolation)
 
-    ;; TODO: check plugged-in
-    ;;;; - subscribe power_state
-    ;;;; - move xy slightly
-
-    (when plugged-in
-        (return))
+    (dotimes (i 5)
+      ;; connect plug
       (send *pr2* :rarm :inverse-kinematics
             (send
-             (send outlet :copy-worldcoords)
-             :translate #f(-300 0 -200) outlet)
-            :rotation-axis :z
-            :use-torso t
-            :look-at-target t)
-      (send *ri* :angle-vector (send *pr2* :angle-vector) 5000)
-      (send *ri* :wait-interpolation)
-
-      ;; retry detect outlet
-      (look-at-outlet :dp dp :dy dy)
-      (setq outlet
-            (check-detection :type "outlet"
-                             :speak-name "konsento"
-                             :timeout 10
-                             :speak t))
-
-      ;; pre connect pose
-      (send *pr2* :rarm :inverse-kinematics
-            (send
-             (send outlet :copy-worldcoords)
-             :translate #f(0 0 -100) outlet)
-            :rotation-axis :z
+             (send *outlet* :copy-worldcoords)
+             :translate (float-vector 0 0 (- z-offset (* i 10))) *outlet*)
+            :rotation-axis t
             :use-torso t
             :look-at-target t)
       (send *ri* :angle-vector (send *pr2* :angle-vector) 5000)
       (send *ri* :wait-interpolation)))
+  )
 
-  ;; release plug
-  (send *ri* :stop-grasp :rarm :wait t)
-  (send *pr2* :rarm :inverse-kinematics
-        (send
-         (send outlet :copy-worldcoords)
-         :translate #f(0 0 -200) outlet)
-        :rotation-axis :z
-        :use-torso t
-        :look-at-target t)
-  (send *ri* :angle-vector (send *pr2* :angle-vector) 5000)
-  (send *ri* :wait-interpolation)
-
-  ;; TODO: switch on
-  ))
 
 (defun charge ()
   (go-to-charge-spot)
