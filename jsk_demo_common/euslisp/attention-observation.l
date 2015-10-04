@@ -195,13 +195,15 @@
     state-history
     ))
 
+(defvar *function-event-args* nil)
 (defmacro make-attention-action (name arg-lst &rest forms)
   ;; arg-lst should not contain attention-barrier-return and attention-action-return
   ;; forms should return nil if failed
   `(defun ,name ,arg-lst
-     (let (attention-barrier-return)
+     (let (attention-barrier-return function-event-id)
        (warn ";; exec ~A~%" (quote ,name))
-       (mongo::insert (instance jsk_demo_common::FunctionEvent :init
+       (setq function-event-id
+             (mongo::insert (instance jsk_demo_common::FunctionEvent :init
                                 :header (instance jsk_demo_common::EventHeader :init
                                                   :header
                                                   (instance std_msgs::Header :init
@@ -209,7 +211,7 @@
                                                   :context *current-context*)
                                 :name (string (quote ,name))
                                 :args (list (prin1-to-string (quote ,arg-lst))))
-                      :meta '((:status . :start)))
+                      :meta '((:status . :start))))
        (setq attention-barrier-return
              (catch :attention-barrier
                (let ((attention-action-return (progn ,@forms)))
@@ -218,6 +220,7 @@
                  :success
                  )))
        (warn ";; exec ~A finish with ~A~%" (quote ,name) attention-barrier-return)
+       (ros::ros-warn "id: ~A args: ~A" function-event-id (car *function-event-args*))
        (cond
         ((stringp attention-barrier-return)
          (let ((str (send *ri* :get-cancel-flag)))
@@ -237,14 +240,24 @@
                                                             :stamp (ros::time-now))
                                                   :context *current-context*)
                                 :name (string (quote ,name))
-                                :args (list (prin1-to-string (quote ,arg-lst))))
-                      :meta (list (cons :status attention-barrier-return)))
+                                :args (if *function-event-args*
+                                          (pop *function-event-args*)
+                                          (list (prin1-to-string (quote ,arg-lst)))))
+                      :meta (list (cons :status attention-barrier-return)
+                                  (cons :start-id function-event-id)))
        (send *ri* :clear-cancel-flag)
        (unless (or (eq attention-barrier-return :fail)
                    (eq attention-barrier-return :success))
          (warn ";; throw ~A~%" attention-barrier-return)
          (throw :all-barrier attention-barrier-return))
        attention-barrier-return)))
+
+(defun logging-parameter (alist)
+  (let (str-lst)
+    (dolist (kv alist)
+      (push (string (cdr kv)) str-lst)
+      (push (string-downcase (string (car kv))) str-lst))
+    (warn "logging-parameter ~A~%" (push str-lst *function-event-args*))))
 
 ;;; debug functions
 (defun defun-debug-functions-interrupt

@@ -1,3 +1,4 @@
+(require :attention-observation "attention-observation.l")
 (load "package://jsk_maps/src/eng2-scene.l")
 
 (unless (boundp '*scene*) (setq *scene* (make-eng2-scene)))

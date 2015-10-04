@@ -29,6 +29,11 @@
 
 (make-attention-action pick (pos &key (arm :larm)
 			 (debug-view nil))
+  (logging-parameter (list
+                       (cons :x (elt (send pos :worldpos) 0))
+                       (cons :y (elt (send pos :worldpos) 1))
+                       (cons :z (elt (send pos :worldpos) 2))
+                       (cons :arm arm)))
   (let ((tmp-pos (send pos :copy-worldcoords)))
     (format t  "Start Pick: ~a~%" pos)
     (send *ri* :stop-grasp arm)  ;; Stop grasp
@@ -436,6 +441,12 @@
 ;;
 (warn ";; define grasp-can-single")
 (make-attention-action grasp-can-single (obj &key (rotation 0) (use-arm :rarm) (grasp-depth 35)(func-time 7))
+  (logging-parameter (list
+                      (cons :x (elt (send obj :worldpos) 0))
+                      (cons :y (elt (send obj :worldpos) 1))
+                      (cons :z (elt (send obj :worldpos) 2))
+                      (cons :use-arm use-arm)
+                      (cons :grasp-depth grasp-depth)))
   (let (via1 via2 tar orig-av (mvt (* (/ (- func-time 4) 4.0) 1000)));; mvt is about 3000. we assume it takes 4 sec other than sending :angle-vector, and there are 4 :angle-vector in this funciton
     (send *ri* :stop-grasp use-arm)
     (send *tfb* :send-transform

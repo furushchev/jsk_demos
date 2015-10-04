@@ -10,6 +10,7 @@
 
 (if *logging*
     (progn
+      (defvar *current-context* :fridge)
       (require :pr2-attention-move "package://jsk_demo_common/euslisp/pr2-attention-move.l")
       (require :pr2-attention-action "package://jsk_demo_common/euslisp/pr2-attention-action.l"))
     (progn
