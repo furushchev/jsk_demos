@@ -41,21 +41,23 @@
   (:floor<
    (name1 name2)
    (let ((p1 (find name1 objs :test #'equal :key #'(lambda(x)(send x :name))))
-	 (p2 (find name2 objs :test #'equal :key #'(lambda(x)(send x :name)))))
+         (p2 (find name2 objs :test #'equal :key #'(lambda(x)(send x :name)))))
      (< (elt (send p1 :worldpos) 2)
-	(elt (send p2 :worldpos) 2))))
+        (elt (send p2 :worldpos) 2))))
   (:current-floor
    (pos &optional (dist 1000))
    (if (derivedp pos coordinates) (setq pos (send pos :worldpos))) ;; for coordinates
    (let ((colbox (make-cube dist dist dist)))
      (send colbox :translate pos)
+     (send colbox :worldcoords) ;; omajinai
      (dolist (floor objs)
-       (when (derivedp floor nav-scene-model)
-	 (setq res (car (pqp-collision-distance colbox (send floor :map))))
-	 (if (equal 0.0 res)
-	     (return-from :current-floor (send floor :name)))
-	 ))))
-  )
+       (when (and (derivedp floor nav-scene-model)
+                  (<= (elt (send (send colbox :box) :minpoint) 2)
+                      (elt (send (send floor :map) :worldpos) 2)
+                      (elt (send (send colbox :box) :maxpoint) 2)))
+         (return-from :current-floor (send floor :name)))
+       ))))
+
 
 ;; arglist := cascoords or (arglist of make-cascoords)
 ;; children := (arglist of make-cascoords)
