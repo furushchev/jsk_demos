@@ -42,11 +42,12 @@
   (:save-brightness (value &optional comment)
    (when *logging*
      (ros::ros-warn "saving brightness ~A" value)
-     (setq docid
-           (mongo::insert
-            (instance std_msgs::float32 :init :data value)
-            :meta `((:comment . ,comment)
-                    (:task-id . ,task-id)))))
+     (let ((docid
+            (mongo::insert
+             (instance std_msgs::float32 :init :data value)
+             :meta `((:comment . ,comment)
+                     (:task-id . ,task-id)))))
+       (ros::ros-warn "saved brightness ~A: ~A" value docid)))
    t)
   )
 
