@@ -12,7 +12,7 @@
   (progn
     (require :pr2-interface "package://pr2eus/pr2-interface.l")
     (unless (boundp 'make-attention-action)
-      (setf (symbol-function 'make-attention-action) (symbol-action 'defun)))))
+      (setf (symbol-function 'make-attention-action) (symbol-function 'defun)))))
 
 ;(load "package://elevator_move_base_pr2/src/add-msg-pgsql.l")
 (require :database-interface "database-interface.l")
