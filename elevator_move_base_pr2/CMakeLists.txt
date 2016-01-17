@@ -4,7 +4,15 @@ project(elevator_move_base_pr2)
 find_package(catkin REQUIRED roscpp image_transport cv_bridge image_geometry tf geometry_msgs std_msgs message_generation roseus)
 
 add_message_files(
-  FILES Float32Stamped.msg)
+  FILES
+  Float32Stamped.msg
+  MatchedTemplates.msg
+  )
+
+add_service_files(
+  FILES
+  ChangeMatchingThreshold.srv
+  )
 
 generate_messages(
   DEPENDENCIES std_msgs)
