@@ -28,7 +28,7 @@
   (close-fridge :use-arm *use-arm*))
 
 (defun move-recoverly ()
-  (goto-front-of-fridge))
+  (goto-front-of-fridge) t)
 
 (defun try-close ()
   (close-fridge :use-arm *use-arm*))

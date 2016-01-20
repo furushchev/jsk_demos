@@ -244,7 +244,10 @@
                    (eq attention-barrier-return :success))
          (warn ";; throw ~A~%" attention-barrier-return)
          (throw :all-barrier attention-barrier-return))
-       attention-barrier-return)))
+       (cond
+        ((eq attention-barrier-return :fail) nil)
+        ((eq attention-barrier-return :success) t)
+        (t attention-barrier-return)))))
 
 ;;; debug functions
 (defun defun-debug-functions-interrupt

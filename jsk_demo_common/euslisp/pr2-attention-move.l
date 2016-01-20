@@ -147,6 +147,6 @@
 (make-attention-action goto-front-of-fridge (&key (torso-lift 130) (head-pitch 0) (wait t))
   (base-go-to-fridge :wait wait)
   (base-go-to-fridge-init-pose :torso-lift torso-lift :head-pitch head-pitch :wait wait)
-  )
+  t)
 
 (provide :pr2-move)
