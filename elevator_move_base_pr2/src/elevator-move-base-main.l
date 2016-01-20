@@ -147,8 +147,20 @@
 ;; State Machine
 ;;
 
+(make-attention-action init-button (userdata)
+  (let ()
+    (setf (cdr (assoc 'loop-count userdata)) 0)
+    t))
+
 (make-attention-action look-button (userdata)
   (let ((panel-name (cdr (assoc 'panel-name userdata))) look-target)
+    ;; loop check
+    (incf (cdr (assoc 'loop-count userdata)))
+    (ros::ros-info "loop-count ~A" (cdr (assoc 'loop-count userdata)))
+    (when (< 3 (cdr (assoc 'loop-count userdata)))
+      (ros::ros-warn "loop-count 3 < ~A" (cdr (assoc 'loop-count userdata)))
+      (return-from look-button nil))
+
     (send *logger* :save-robot-pose "look-button")
     ;; nearest call panel
     (ros::ros-info "panel-name: ~A" panel-name)
@@ -207,12 +219,14 @@
 
 (defun push-state-machine ()
   (let ((sm (instance state-machine :init)))
+    (send sm :add-node (instance state :init :init 'init-button))
     (send sm :add-node (instance state :init :look 'look-button))
     (send sm :add-node (instance state :init :push 'push-button-func))
     (send sm :add-node (instance state :init :check 'check-button-light))
-    (send sm :arg-keys 'button 'panel-name)
+    (send sm :arg-keys 'button 'panel-name 'loop-count)
     (send sm :goal-state (list :success :fail))
     (send sm :start-state :look)
+    (send sm :add-transition :init :look t)
     (send sm :add-transition :look :push t)
     (send sm :add-transition :look :fail nil)
     (send sm :add-transition :push :check t)
