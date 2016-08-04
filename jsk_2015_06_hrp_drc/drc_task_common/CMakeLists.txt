@@ -14,9 +14,21 @@ add_message_files(DIRECTORY msg FILES JointStateArray.msg)
 add_service_files(DIRECTORY srv FILES RvizMenuCall.srv RvizMenuSelect.srv EusCommand.srv StringRequest.srv ICPService.srv GetIKArm.srv GetIKArmPose.srv GoPosCommand.srv Uint8Request.srv AngleVectorCommand.srv ReachUntilTouchCommand.srv SetValue.srv GetBoolState.srv)
 
 # Generate msg file from DRCParametersConfig file
+set(tmp_pythonpath $ENV{PYTHONPATH})
+set(ENV{PYTHONPATH} ${CATKIN_DEVEL_PREFIX}/${PYTHON_INSTALL_DIR}:$ENV{PYTHONPATH})
 execute_process(
   COMMAND ${PROJECT_SOURCE_DIR}/scripts/gen_reconfigure_msg.py ${PROJECT_SOURCE_DIR}/msg/DRCParametersMessage.msg
-  ${PROJECT_SOURCE_DIR}/msg/DRCParametersMessage.msg)
+  OUTPUT_VARIABLE output_variable
+  RESULT_VARIABLE result_variable
+  ERROR_VARIABLE error_variable
+  )
+message("gen_reconfigure_msg.py : output ${output_variable}")
+message("gen_reconfigure_msg.py : result ${result_variable}")
+message("gen_reconfigure_msg.py : error ${error_variable}")
+message("gen_reconfigure_msg.py : pythonpath ${tmp_pythonpath}")
+message("gen_reconfigure_msg.py : pythonpath $ENV{PYTHONPATH}")
+set(ENV{PYTHONPATH} ${tmp_pythonpath})
+
 
 generate_dynamic_reconfigure_options(
   config/vehicle/LocalPlannerParams.cfg
@@ -26,6 +38,7 @@ generate_dynamic_reconfigure_options(
   cfg/StandingDrillDetector.cfg
   cfg/FilterBBoxPosition.cfg
   cfg/BControlDummyServer.cfg
+  cfg/ValveRejector.cfg
 )
 
 add_message_files(DIRECTORY msg FILES DRCParametersMessage.msg)
@@ -129,13 +142,6 @@ install(TARGETS
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
-install(FILES
-  plugin_description.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-)
-install(DIRECTORY icons/
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/icons
-)
-install(DIRECTORY scripts launch
+install(DIRECTORY scripts launch icons
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
   USE_SOURCE_PERMISSIONS)

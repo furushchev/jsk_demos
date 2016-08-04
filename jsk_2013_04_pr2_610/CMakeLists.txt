@@ -6,7 +6,11 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   jsk_demo_common
   jsk_perception
+  task_compiler
   pddl_planner
+  pddl_planner_viewer
+  laser_filters_jsk_patch
+  imagesift
   pr2eus
   roseus_smach
   roseus)
@@ -48,3 +52,8 @@ install(
   DIRECTORY launch
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
   )
+
+if(CATKIN_ENABLE_TESTING)
+  find_package(rostest REQUIRED)
+  add_rostest(test/test-demo.test)
+endif()

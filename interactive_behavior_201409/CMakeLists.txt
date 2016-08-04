@@ -11,6 +11,10 @@ find_package(catkin REQUIRED COMPONENTS
   roseus
 )
 
+find_package(catkin COMPONENTS
+  face_recognition
+)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 

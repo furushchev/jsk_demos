@@ -2,6 +2,18 @@
 Changelog for package drc_com_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.3 (2016-02-11)
+------------------
+
+0.0.2 (2015-11-26)
+------------------
+* [drc_com_common] Add respawn flag to highspeed receivers
+* [drc_com_common] Use silverhammer highspeed receiver with internalbuffer in
+  order to cleanup silverhammer processes
+* [drc_task_common] Omit footstep planner client in fc-executive.l
+* [drc_com_common] Use jsk_robot_utils to compress/decompress joint angles
+* Contributors: Ryohei Ueda
+
 0.0.1 (2015-06-11)
 ------------------
 * add emergency-pose button to rviz
@@ -201,4 +213,4 @@ Changelog for package drc_com_common
 * Revert "add drc teleop demo program"
 * add drc teleop demo program
 * add drc teleop demo program
-* Contributors: HRP2, Kei Okada, Masaki Murooka, MasakiMurooka, Ryohei Ueda, Shunichi Nozawa, Yohei Kakiuchi, YoheiKakiuchi, YuOhara, eisoku9618, iori, iory, jskuser, leus, mmurooka, ohara
+* Contributors: Kei Okada, Masaki Murooka, Ryohei Ueda, Shunichi Nozawa, Yohei Kakiuchi, Yu Ohara, Eisoku kuroiwa, Iori Kumagai, Iori Yanokura

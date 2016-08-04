@@ -15,16 +15,35 @@ import imp
 imp.find_module('jsk_teleop_joy')
 from jsk_teleop_joy.b_control_status import BControl2Status
 from geometry_msgs.msg import *
-from jsk_recognition_msgs.msg import BoundingBox
+from jsk_recognition_msgs.msg import BoundingBox, SimpleHandle
 from sensor_msgs.msg import Joy, JoyFeedback, JoyFeedbackArray, PointCloud2
-from std_msgs.msg import Float32, ColorRGBA, Bool, Header
+from std_msgs.msg import Float32, ColorRGBA, Bool, Header, Float64
 import tf
+from tf.transformations import *
 imp.find_module('std_srvs')
 from std_srvs import srv
 from std_msgs import msg
 imp.find_module('drc_task_common')
 from drc_task_common.srv import *
 from drc_task_common.msg import *
+
+def pose2mat(pose):
+    return concatenate_matrices(translation_matrix([
+        pose.position.x,
+        pose.position.y,
+        pose.position.z]),
+                                 quaternion_matrix([
+        pose.orientation.x,
+        pose.orientation.y,
+        pose.orientation.z,
+        pose.orientation.w])
+    )
+def mat2pose(mat):
+    trans = translation_from_matrix(mat)
+    rot = quaternion_from_matrix(mat)
+    return Pose(Vector3(trans[0], trans[1], trans[2]), Quaternion(rot[0], rot[1], rot[2], rot[3]))
+def transform_pose(base, trans):
+    return mat2pose(concatenate_matrices(pose2mat(base), pose2mat(trans)))
 
 def b_control_client_init():
     rospy.init_node('b_control_client')
@@ -86,10 +105,12 @@ def b_control_client_init():
     ## ts = message_filters.TimeSynchronizer([box_sub, points_sub], 10)
     ## ts.registerCallback(selected_box_cb)
     #rospy.Subscriber('bounding_box_marker/selected_box', BoundingBox, selected_box_cb)
-    rospy.Subscriber('selected_box', BoundingBox, selected_only_box_cb)
-    rospy.Subscriber('/passed_selected_box', BoundingBox, selected_only_box_cb)
-    rospy.Subscriber('t_marker_info', TMarkerInfo, marker_info_cb)
     
+    rospy.Subscriber('/hinted_handle_estimator/handle', SimpleHandle, hand_recog_cb)
+    rospy.Subscriber('selected_box', BoundingBox, selected_only_box_cb)
+    rospy.Subscriber('/bounding_box_marker/selected_box', BoundingBox, selected_only_box_to_cylinder_cb)
+    rospy.Subscriber('t_marker_info', TMarkerInfo, marker_info_cb)
+
     tf_listener = tf.TransformListener()
     get_type_srv = rospy.ServiceProxy(ns+'/get_type', GetType)
     set_pose_srv = rospy.ServiceProxy(ns+'/set_pose', SetTransformableMarkerPose)
@@ -122,7 +143,8 @@ def b_control_client_init():
     menu_cancel_srv = rospy.ServiceProxy('/rviz_menu_cancel', srv.Empty)
     menu_variable_pub = rospy.Publisher('/rviz_menu_variable', Float32)
     # menu_bool_pub = rospy.Publisher('/rviz_menu_bool', Bool)
-    
+    global box_num
+    box_num=0
     # midi device
     rospy.Subscriber('input_joy', Joy, b_control_joy_cb)
     rospy.sleep(1)
@@ -168,7 +190,7 @@ def b_control_joy_cb(msg):
     if insert_hand_flag:
         menu_cancel_srv()
         rospy.sleep(0.1)
-        erase_all_marker()
+        # erase_all_marker()
         try:
             ik_arm = get_ik_arm_srv().ik_arm
         except rospy.ServiceException, e:
@@ -306,6 +328,12 @@ def b_control_joy_cb(msg):
     menu_v.data = status.slide8
     menu_variable_pub.publish(menu_v)
 
+def hand_recog_cb(handle):
+    # dimensions
+    x = y = handle.handle_width
+    z = x * 4
+    selected_only_box_cb(BoundingBox(header=handle.header, pose=transform_pose(handle.pose, Pose(position=Vector3(x/2, 0, 0))), dimensions=Vector3(x, y, z)))
+
 def selected_box_cb(msg, points_msg):
     rospy.loginfo("selected_box_cb driven")
     if not auto_set_mode:
@@ -371,6 +399,12 @@ def marker_info_cb(msg):
     set_color_pub.publish(color)
     set_pose_srv(pose_stamped=msg.marker_pose_stamped)
     set_dim_srv(dimensions=msg.marker_dim)
+
+def selected_only_box_to_cylinder_cb(msg):
+    global box_num
+    insert_marker(shape_type=TransformableMarkerOperate.CYLINDER, name='box%i' % box_num, description='')
+    box_num = box_num+1
+    selected_only_box_cb(msg)
 
 def selected_only_box_cb(msg):
     pose_stamped_msg = PoseStamped()

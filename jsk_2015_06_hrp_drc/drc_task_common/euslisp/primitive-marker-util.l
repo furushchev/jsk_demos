@@ -55,19 +55,22 @@
 ;; receive ;;;;;;;;;;;;;;;;;;;;
 
 (defun get-primitive-marker-pose
-  (&key name frame-id)
+  (&key name frame-id wait-duration)
   (let* ((req (instance jsk_interactive_marker::GetTransformableMarkerPoseRequest :init))
          pose-st coords)
     (when name (send req :target_name name))
     (setq pose-st (send (ros::service-call "/transformable_interactive_server/get_pose" req) :pose_stamped))
     (setq coords (ros::tf-pose->coords (send pose-st :pose)))
     (when frame-id
+      (if (and wait-duration frame-id)
+          (send *tf* :wait-for-transform (send pose-st :header :frame_id) frame-id 
+                (send pose-st :header :stamp) wait-duration))
       (let ((trans (send *tf* :lookup-transform frame-id
                          (send pose-st :header :frame_id) (send pose-st :header :stamp))))
         (unless trans
           (setq trans (send *tf* :lookup-transform frame-id
                             (send pose-st :header :frame_id) (ros::time 0))))
-        (setq coords (send trans :transform coords))
+        (if trans (setq coords (send trans :transform coords)))
         ))
     coords))
 

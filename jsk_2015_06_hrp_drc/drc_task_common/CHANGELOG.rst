@@ -2,6 +2,196 @@
 Changelog for package drc_task_common
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.3 (2016-02-11)
+------------------
+* [robot_model.launch] use upstream launch file
+* [robot-util.l] add jaxon_jvrc in robot-file
+* [drc_task_common/euslisp/irex_carry_trass] Set red color for trass interactive marker
+* [drc_task_common/euslisp/irex_carry_trass] Test large step stride while trass demo walking.
+* [drc_task_common/irex-large-box] Reduce initialization time by k-kimura.
+* [drc_task_common/irex_carry_trass] Add viewer title and reduce unnecessary sleep by rkoyama.
+* [drc_task_common/euslisp/irex_carry_trass] Add argument to skip recog&gopos.
+* [drc_task_common/euslisp/irex-large-box] Add resizing of irt viewer
+* [drc_task_common/euslisp/irex-large-box] Update for sift recog by k-kimura and youhei
+* [drc_task_common/euslisp/irex-large-box] Fix via coords for reaching and add setting of time parameter for object turnaround detection for box pushing.(by k-kimura)
+* [drc_task_common/euslisp/irex_carry_trass] Add y-o-n-p for recognition by rkoyama.
+* [drc_task_common/euslisp/irex_carry_trass] Use y-or-n-p instead of read-line
+* [drc_task_common/euslisp/irex_carry_trass] Fix gopos value and rename function
+* [drc_task_common/euslisp/irex_carry_trass] debug the vibration during carrying the trass
+* change push emergency stopper threshold parameter to 100N
+* [drc_task_common] Add imprecise scheduler prototype
+* [drc_task_common/euslisp/irex_carry_trass]add recognition, and debug the refforce estimation
+* modify the timing of recognition
+* add apply-primitive-dimensions-to-midi-device
+* modify calib-offset-coords parameter
+* [drc_task_common/euslisp/irex_carry_trass/carry-trass.l] modify demo to use pfilter
+* add jaxon-wooden-box-okkake loop
+* receiveing estimated pose from particle filter
+* change new sift template KEEP DRY label
+* Delete anybots-box programs
+* Add maai diff value
+* [drc_task_common/euslisp/irex_carry_trass] modify the pose to carry trass
+* Add interactive marker
+* Change irex demo version for pushing box
+* Merge remote-tracking branch 'koyama/add_irex_koyama_release'
+* add snozawa san commit
+* [drc_task_common/euslisp/irex_carry_trass/carry-trass.l]modify the pose to reach-trass
+* add box-push emergency stopper
+* modify comment out
+* change apc_box name to wooden_box name
+* [irex_carry_trass] update trass
+* [drc_task_common/euslisp] add files to carry trass.
+* add y-or-n-p cancel mode
+* modify head neck-p joint-angle
+* change head neck-p angle and sift-label-coords
+* Merge pull request `#1126 <https://github.com/jsk-ros-pkg/jsk_demos/issues/1126>`_ from mmurooka/valve-motion-slower
+  [drc_task_common] make slow valve motion a little
+* CMakeLists.txt : clean up install rules
+* CMakeLists.txt remove install FILES plugin_description.xml, which is not exists
+* change impedance parameters and reach pos y
+* change soft arm impedance
+* make slow valve motion a little
+* modify ik joint angle margin
+* delete euslisp files
+* add jaxon recognizing push box for IREX
+* integrate jaxon sift recognition and push box motion
+* modify wooden box dimension z and add push main function
+* change to wood box version
+* devide anybots box and wood box
+* add jaxon_red reaching and push motion
+* push program to reach
+* delete sift_sample
+* change templates name
+* move templates files
+* delete sample-label.jpg and sift.launch
+* update launch and images directory
+* change apc model
+* Change to other box version
+* Add hrp2jsknt version reach motion
+* Add irex box sift recognition and reaching motion
+* [drc_task_common/euslisp/primitive-marker-util.l]debug the problem of tf by ueda-san
+* [drc_task_common] Add door handle detector with super conservative way (it takes 17 secs to detect door)
+* Contributors: Eisoku Kuroiwa, Kei Okada, Kohei Kimura, Masaki Murooka, Ryohei Ueda, Shunichi Nozawa, Yohei Kakiuchi
+
+0.0.2 (2015-11-26)
+------------------
+* reserve params for 2nd time
+* fix jaxon ik param for valve motion. set waist joint weight zero.
+* change wall motion for renewed limitation
+* remove lookat
+* remove unneeded lookat
+* Ignore auto generated files
+* [jsk_2015_06_hrp_drc/drc_task_common/euslisp]remove unnecessary files in door-open
+* [door-open]add door-open files
+* add okiagari tab for ocs
+* remove typo
+* stop-impedance when using spreader
+* fix param for jvrc
+* change rviz interactive marker coordinates
+* remove stop-impedance
+* finish parameter tuning and add emergency-mode
+* disable handle estimate and enable move with selected-point
+* write to csv file
+* fix param for jvrc
+* add jvrc barcode reading
+* add option not use resize for local usage
+* modify hold-spreader function for speed-up
+* add cheating speedup mode for jvrc
+* add cylinder finding node
+* [jsk_2015_06_hrp_drc/drc_task_common/euslisp/test-drc-terrain-walk.l] Add hrp2jsknt block climbup demo
+* change ik for use box
+* change stride parameter
+* modify throw away function for using rarm camera
+* [drc_task_common] add always-ik-mode
+* remove designation of hand when grasping
+* modify opening gripper for speed-up
+* add throw away and look QR code function
+* modify move-head-rot and add this function to select-func
+* fix typo in jvrc-grasp-spreader
+* fix typo
+* add multisense launch
+* add remove-offset and move-head-rot function
+* change insert position and make middle pose for reaching
+* enable to use larm for use spreader and to select which to reach (grip or body)
+* use pr2_navigation_self_filter
+* change grip place and modify adjust function
+* add comment for initial function
+* add set-ref-force because of spreader weight
+* modify real to t in select function
+* modify some function in local or world moving and add impedance
+* modify jvrc-grasp-spreader
+* add initialize of zero vector
+* modify *jaxon* to *jaxon_red*
+* modify reading number and add use spreader function (move from demo/terasawa)
+* [drc_task_common] add ik option for peep into cylinder
+* [drc_task_common] one click cylinder detection
+* add jvrc-grasp-spreader
+* not use group for remapping
+* add get-up motion for jvrc
+* locomotion_without_silver_for_jvrc
+* jvrc ocs and fc without silverhammer
+* change base frame and others
+* revert only rviz file
+* remove program because not used
+* [drc_task_common] Use footstep-controller-old.l for prompt compatiblity
+* add remapped ui for drc tasks
+* change offset value for b_con
+* add rqt ui for dummy b_Control_device
+* add use-leg option to param-door
+* add option for not use ocs remap
+* change to recycle code
+* remove unneeded tabs
+* cp drc -> jvrc
+* changed valve motin fast
+* reverse angle
+* uniform default arm for any robot
+* change angle for pre reach
+* change drill recog
+* [drc_task_common] Remove fisheye_sphere from fc_misc.launch
+* [drc_task_common] Remove state viewer, it is drawn on rviz
+* [drc_task_common] Rewrite locomotion.launch and ocs_locomotion.launch with
+  standalone_complexed_nodelet
+* [drc_task_common] Rewrite drill_recognition_for_put.launch with standalone_complexed_nodelet
+* [drc_task_common] Rewrite drill_recognition_for_wall.launch with santalone_complexed_nodelet
+* [drc_task_common] Rewrite drill_recognition_for_button.launch with standalone_complexed_nodelet
+* [drc_task_common] Rewrite drill_recognition.launch with standalone_complexed_nodelet
+* [drc_task_common] Rewrite door_unvisible_handle_recognition.launch with standalone_complexed_nodelet
+* [drc_task_common] Fix cmake not to compile drc_teleop_interface.cpp
+* [drc_task_common] Do not use fisheye nodelet manager in order not to
+  use bond connection
+* [drc_task_common] Use jsk_rviz_plugins::RobotCommandInterfaceAction instead of drc_teleop_interface
+* [drc_task_common] Omit footstep planner client in fc-executive.l
+* [drc_task_common] Resolve collision of dynamic_tf_publisher in ocs
+* fix walking-pose. check whether the robot has :head-neck-p before calling
+* [drc_task_common] Do not echo silverhammer in field_computer.sh
+* [drc_task_common] Fix shell script syntax error in operator_station.sh
+* add recognition in hand
+* slower drill grasp params
+* [drc_task_common] Rewrite stereo_preprocess.launch and
+  laser_preorocess.launch with jsk_topic_tools/standalone_complexed_nodelet
+* change valve recog to use jsk nodelet
+* [drc_task_common] Use current instead of effort for JAXON
+* [drc_task_common] Remove tilt_laser_listener from laser_preprocess
+* [drc_task_common] Set longer ~max_queue_size to extract nearest cluster
+  for valve detection
+* [drc_task_common] Do not run multisense_remote for hrp2
+* add use_reach-until-touch mode
+* add keyshot for drill
+* add keyshot timing more
+* add use_reach-until-touch mode
+* fix reset motion
+* add comment
+* enalbe to select reach-until-touch mode
+* add function to judge grasped or not
+* add to use reach_until_touch
+* [drc_task_common] Update launch files for locomotion planning
+* [drc_task_common] Do not use jaxon_red_ros_bridge
+* add keyshot for other tasks
+* change params to detect standing drill
+* add_parentheses
+* [drc_task_common] Remove dependency to ar_pose
+* Contributors: Hiroto Mizohana, Kentaro Wada, Kohei Kimura, Masaki Murooka, Ryo KOYAMA, Ryohei Ueda, Yu Ohara, Yuta Kojio, Eisoku Kuroiwa, Ryo Terasawa
+
 0.0.1 (2015-06-11)
 ------------------
 * fix drive recognition checks
@@ -1633,4 +1823,4 @@ Changelog for package drc_task_common
 * added manipulation_data_processor in launch file
 * added assoc_function
 * add drc teleop demo program
-* Contributors: Eisoku Kuroiwa, Yuki Furuta, HRP2, JAXON, JSK, Kamada Hitoshi, Kei Okada, Kentaro Wada, Kohei Kimura, Masaki Murooka, Masaki Murooka, Ryo Terasawa, Ryohei Ueda, Satoshi Iwaishi, Shunichi Nozawa, Ryo Terasawa, Yu Ohara, Yusuke Oshiro, Yuto Inagaki, Chi Wun Au, Eisoku Kuroiwa, Iori Kumagai, Iori Yanokura, Kouhei Kimura, Satoshi Otsubo, SHintaro Noda, Ryo Terasawa, Yoshimaru Tanaka
+* Contributors: Eisoku Kuroiwa, Yuki Furuta, JSK Lab Member, JAXON, JSK, Kamada Hitoshi, Kei Okada, Kentaro Wada, Kohei Kimura, Masaki Murooka, Ryo Terasawa, Ryohei Ueda, Satoshi Iwaishi, Shunichi Nozawa, Yu Ohara, Yusuke Oshiro, Yuto Inagaki, Chi Wun Au, Iori Kumagai, Iori Yanokura, Kouhei Kimura, Satoshi Otsubo, SHintaro Noda, Yoshimaru Tanaka

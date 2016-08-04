@@ -2,6 +2,41 @@
 Changelog for package detect_cans_in_fridge_201202
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+0.0.3 (2016-02-11)
+------------------
+* [detect_cans_in_fridge_201202/euslisp/pddl-action.l] fix missing options
+* [detect_cans_in_fridge_201202/CMakeLists.txt] add roseus to find_package
+* Merge pull request `#1152 <https://github.com/jsk-ros-pkg/jsk_demos/issues/1152>`_ from furushchev/fridge-fix-interactive
+  [detect_cans_in_fridge_201202/euslisp/main.l] bugfix: prevent calling (enable-behavior-server) many times
+* [detect_cans_in_fridge_201202/launch/gazebo_startup.launch] add launch file for gazebo
+* [detect_cans_in_fridge_201202/detect_cans] add plane extraction for fridge inner shelf substraction
+* [detect_cans_in_fridge_201202] add debug-view argument for preventing irtviewer launch
+* [detect_cans_in_fridge_201202/euslisp/match-hist.l] update parameter for match hist lower cutting threshold
+* [detect_cans_in_fridge_201202/euslisp/main.l] bugfix: prevent calling (enable-behavior-server) many times
+* [detect_cans_in_fridge_201202] add debug-view argument for preventing irtviewer launch
+* [detect_cans_in_fridge_201202] remove old/unused codes; cleanup directory
+* [detect_cans] add README
+* [detect_cans] async join based parallel state-machine
+* Contributors: Yuki Furuta, Kamada Hitoshi, Ryohei Ueda
+
+0.0.2 (2015-11-26)
+------------------
+* [jsk_demos] exec fridge demo in smach
+* [jsk_demos] exec fridge demo in simulation mode
+* [detect_cans] set *current-context
+* [detect_cans] change the load place
+* [detect_cans] fix arg in startup.launch
+* [detect_cans_in_fridge201202/euslisp/main.l] add logging option
+* [detect_cans] visualize GaussianPointCloud of fridge
+* add documentation string
+* euslisp/color_histogram_creater.l: use eus-pointcloud instead of 3dpointcloud
+* [detect_cans_in_fridge_201202 & jsk_demo_common] change name space openni -> kinect_head
+* [jsk_demo_common] divide-fridge-func
+* [detect_cans_in_fridge] modify launch remap
+* [detect_cans_in_fridge] change from openni_c2 to kinect_head_c2
+* [jsk_demos] fix typo
+* Contributors: Kamada Hitoshi, Kei Okada, Yohei Kakiuchi, Yuki Furuta
+
 0.0.1 (2015-06-11)
 ------------------
 * [detect_cans.l] load-ros-manifest self package
