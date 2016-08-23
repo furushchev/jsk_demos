@@ -1,16 +1,136 @@
 <launch>
-  <arg name="ROBOT" default="$(env ROBOT)" />
+  <arg name="input_cloud" default="/kinect_head_c2/depth_registered/points_self_filtered" />
+  <arg name="input_camera_info" default="/kinect_head_c2/depth_registered/camera_info" />
+  <arg name="launch_sift" default="false" />
+  <arg name="machine" default="c2" />
 
-  <include file="$(find pr2_machine)/$(arg ROBOT).machine" />
+  <include file="$(find pr2_machine)/$(optenv ROBOT sim).machine" />
 
-  <include file="$(find jsk_2013_04_pr2_610)/launch/detect_with_image.launch">
-    <arg name="camera" value="/narrow_stereo/left"/>
-    <arg name="object" value="outlet" />
-    <arg name="window_name" value="outlet" />
-    <arg name="template_filename" value="$(find jsk_pr2_plugs)/data/pr2_dock_logo.jpg" />
-    <arg name="object_width" value="0.165" />
-    <arg name="object_height" value="0.165" />
-    <arg name="relative_pose" value="0.8 0.15 0.16 0 0.1 0" />
-    <arg name="viewer_window" value="true" />
+  <include file="$(find jsk_pr2_plugs)/launch/detect_with_image.launch"
+           if="$(arg launch_sift)">
+	<arg name="camera" value="/narrow_stereo/right" />
+	<arg name="object" value="outlet" />
+	<arg name="window_name" value="outlet" />
+	<arg name="template_filename" value="$(find jsk_pr2_plugs)/data/outlet.jpg" />
+	<arg name="object_width" value="0.243" />
+	<arg name="object_height" value="0.174" />
+	<arg name="relative_pose" value="0 0 0 0 0 0" />
+	<arg name="reprojection_threshold" value="3.0" />
+	<arg name="error_threshold" value="80.0" />
+	<arg name="distanceratio_threshold" value="0.49" />
   </include>
+
+  <group ns="outlet_recognition">
+    <node name="template_server"
+          pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find jsk_pr2_plugs)/data/outlet2.pcd 1.0"
+          output="screen">
+      <remap from="cloud_pcd" to="~output" />
+    </node>
+  <node name="nodelet_manager"
+        pkg="jsk_topic_tools" type="standalone_complexed_nodelet"
+        machine="$(arg machine)"
+        output="screen">
+    <rosparam subst_value="true">
+      nodelets:
+        - name: input_relay
+          type: jsk_topic_tools/Relay
+          remappings:
+            - from: ~input
+              to: $(arg input_cloud)
+        - name: front_cloud_filter
+          type: jsk_pcl/AttentionClipper
+          remappings:
+            - from: ~input
+              to: $(arg input_camera_info)
+            - from: ~input/points
+              to: input_relay/output
+        - name: front_cloud_extraction
+          type: jsk_pcl/ExtractIndices
+          remappings:
+            - from: ~input
+              to: input_relay/output
+            - from: ~indices
+              to: front_cloud_filter/output/point_indices
+        - name: plane_segmentation
+          type: jsk_pcl/OrganizedMultiPlaneSegmentation
+          remappings:
+            - from: ~input
+              to: front_cloud_extraction/output
+        - name: plane_extraction
+          type: jsk_pcl/MultiPlaneExtraction
+          remappings:
+            - from: ~input
+              to: front_cloud_extraction/output
+            - from: ~indices
+              to: plane_segmentation/output_refined
+            - from: ~input_polygons
+              to: plane_segmentation/output_refined_polygon
+            - from: ~input_coefficients
+              to: plane_segmentation/output_refined_coefficients
+        - name: euclidean_clustering
+          type: jsk_pcl/EuclideanClustering
+          remappings:
+            - from: ~input
+              to: plane_extraction/output_nonplane_cloud
+        - name: cluster_decomposer
+          type: jsk_pcl/ClusterPointIndicesDecomposer
+          remappings:
+            - from: ~input
+              to: front_cloud_extraction/output
+            - from: ~target
+              to: euclidean_clustering/output
+        - name: outlet_registration
+          type: jsk_pcl/ICPRegistration
+          remappings:
+            - from: ~input
+              to: cluster_decomposer/output00
+            - from: ~input_reference
+              to: template_server/output
+    </rosparam>
+  </node>
+  <group ns="template_server">
+    <rosparam subst_value="true">
+      models:
+        - $(find jsk_pr2_plugs)/data/outlet.pcd
+    </rosparam>
+  </group>
+  <group ns="front_cloud_filter">
+    <rosparam>
+      use_multiple_attention: false
+      dimension_x: 2.0
+      dimension_y: 1.0
+      dimension_z: 0.5
+      frame_id: base_footprint
+      initial_pos: [1.35, 0.0, 0.23]
+    </rosparam>
+  </group>
+  <group ns="front_cloud_extraction">
+    <rosparam>
+      keep_organized: true
+    </rosparam>
+  </group>
+  <group ns="plane_segmentation">
+    <rosparam>
+      max_curvature: 0.01
+      estimate_normal: true
+    </rosparam>
+  </group>
+  <group ns="euclidean_clustering">
+    <rosparam>
+      torelance: 0.3
+    </rosparam>
+  </group>
+  <group ns="cluster_decomposer">
+    <rosparam>
+      publish_clouds: true
+      publish_tf: true
+    </rosparam>
+  </group>
+  <group ns="outlet_registration">
+    <rosparam>
+      use_normal: true
+    </rosparam>
+  </group>
+  </group>
 </launch>
