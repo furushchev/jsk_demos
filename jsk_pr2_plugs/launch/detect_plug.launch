@@ -1,0 +1,14 @@
+<launch>
+  <include file="$(find jsk_2013_04_pr2_610)/launch/detect_with_image.launch">
+	<arg name="camera" value="/narrow_stereo/right" />
+	<arg name="object" value="outlet" />
+	<arg name="window_name" value="outlet" />
+	<arg name="template_filename" value="$(find jsk_pr2_plugs)/data/outlet.jpg" />
+	<arg name="object_width" value="0.243" />
+	<arg name="object_height" value="0.174" />
+	<arg name="relative_pose" value="0 0 0 0 0 0" />
+	<arg name="reprojection_threshold" value="3.0" />
+	<arg name="error_threshold" value="80.0" />
+	<arg name="distanceratio_threshold" value="0.49" />
+  </include>
+</launch>

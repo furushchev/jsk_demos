@@ -1,0 +1,23 @@
+<launch>
+  <arg name="camera_ns" default="kinect_head_c2/rgb" />
+  <arg name="frame_id" default="head_mount_kinect_rgb_optical_frame" />
+  <arg name="display" default="false" />
+
+  <node name="pr2_plug_detector" pkg="checkerboard_detector" type="checkerboard_detector"
+        output="screen">
+    <remap from="camera_info" to="$(arg camera_ns)/camera_info" />
+    <remap from="image" to="$(arg camera_ns)/image_rect_mono" />
+    <rosparam subst_value="true">
+      display: $(arg display)
+      type0: pr2_plug
+      maxboard: 1
+      frame_id: $(arg frame_id)
+      rect0_size_x: 0.006
+      rect0_size_y: 0.006
+      grid0_size_x: 4
+      grid0_size_y: 5
+      board_type: chess
+    </rosparam>
+  </node>
+</launch>
+
