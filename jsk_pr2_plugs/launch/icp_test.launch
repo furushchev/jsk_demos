@@ -1,0 +1,72 @@
+<launch>
+  <arg name="input_cloud" default="/kinect_head_c2/depth_registered/points" />
+  <arg name="manager" default="outlet_tracking_manager" />
+  <arg name="machine" default="localhost" />
+
+  <machine name="localhost" address="localhost" />
+
+  <node name="tf_pc_transform" pkg="tf" type="static_transform_publisher"
+        args="0 0 0 1.3 0.5 0.3 /base_link /rotated_link 100" />
+  <group ns="outlet_tracking">
+    <node name="template_server"
+          pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find jsk_pr2_plugs)/data/outlet.pcd 0"
+          output="screen">
+      <remap from="cloud_pcd" to="~output" />
+    </node>
+
+    <!-- rotate point cloud -->
+    <node name="template_server_viz"
+          pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find jsk_pr2_plugs)/data/outlet.pcd 0.1"
+          output="screen">
+      <remap from="cloud_pcd" to="~output" />
+    </node>
+    <node name="pose_pub" pkg="roseus" type="roseus"
+          args="$(find jsk_pr2_plugs)/euslisp/publish_pcd_pose.l" />
+    <node name="transform_cloud"
+          pkg="jsk_topic_tools" type="standalone_complexed_nodelet"
+          output="screen">
+      <rosparam subst_value="true">
+        nodelets:
+        - name: transform_pc
+          type: jsk_pcl_utils/PCDReaderWithPose
+          remappings:
+          - from: ~input
+            to: pose_pub/output
+          - from: ~output
+            to: $(arg input_cloud)
+      </rosparam>
+    </node>
+    <group ns="transform_pc">
+      <rosparam subst_value="true">
+        pcd_file: $(find jsk_pr2_plugs)/data/outlet.pcd
+      </rosparam>
+    </group>
+    <node name="nodelet_manager"
+          pkg="jsk_topic_tools" type="standalone_complexed_nodelet"
+          machine="$(arg machine)" output="screen">
+      <rosparam subst_value="true">
+        nodelets:
+        - name: input_relay
+          type: jsk_topic_tools/Relay
+          remappings:
+            - from: ~input
+              to: $(arg input_cloud)
+        - name: outlet_registration
+          type: jsk_pcl/ICPRegistration
+          remappings:
+            - from: ~input
+              to: input_relay/output
+            - from: ~input_reference
+              to: template_server/output
+      </rosparam>
+    </node>
+    <group ns="outlet_registration">
+      <rosparam>
+        correspondence_algorithm: 0
+        use_normal: false
+      </rosparam>
+    </group>
+  </group>
+</launch>

@@ -1,0 +1,67 @@
+<launch>
+  <arg name="input_cloud" default="/kinect_head_c2/depth_registered/points" />
+  <arg name="manager" default="outlet_tracking_manager" />
+  <arg name="debug" default="true" />
+  <arg name="machine" default="localhost" />
+
+  <machine name="localhost" address="localhost" />
+
+  <include file="$(find jsk_data)/launch/pr2_play.launch"
+           unless="$(arg debug)">
+    <arg name="bagfile_names" value="$(find jsk_pr2_plugs)/data/outlet_2016-08-11-07-07-09.bag"/>
+    <arg name="use_xterm" value="true" />
+    <arg name="rosbag_option" value="--clock --pause" />
+  </include>
+
+  <group ns="outlet_tracking">
+    <node name="template_server"
+          pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find jsk_pr2_plugs)/data/outlet.pcd 0"
+          output="screen">
+      <remap from="cloud_pcd" to="~output" />
+    </node>
+    <node name="debug_server"
+          pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find jsk_pr2_plugs)/data/outlet.pcd 1.0"
+          output="screen">
+      <remap from="cloud_pcd" to="$(arg input_cloud)" />
+    </node>
+    <node name="nodelet_manager"
+          pkg="jsk_topic_tools" type="standalone_complexed_nodelet"
+          machine="$(arg machine)" output="screen">
+      <rosparam subst_value="true">
+        nodelets:
+        - name: input_relay
+          type: jsk_topic_tools/Relay
+          remappings:
+            - from: ~input
+              to: $(arg input_cloud)
+        - name: downsample
+          type: pcl/VoxelGrid
+          remappings:
+            - from: ~input
+              to: input_relay/output
+        - name: particle_filter_tracking
+          type: jsk_pcl/ParticleFilterTracking
+          remappings:
+            - from: ~input
+              to: downsample/output
+            - from: ~renew_model
+              to: template_server/output
+      </rosparam>
+    </node>
+    <group ns="downsample">
+      <rosparam>
+        filter_limit_min: 0.0
+        filter_limit_max: 5.0
+        filter_limit_field_name: z
+      </rosparam>
+    </group>
+    <group ns="particle_filter_tracking">
+      <rosparam>
+        track_target_name: outlet
+        BASE_FRAME_ID: /base_link
+      </rosparam>
+    </group>
+  </group>
+</launch>
