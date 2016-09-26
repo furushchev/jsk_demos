@@ -23,6 +23,7 @@
     <node name="debug_server"
           pkg="pcl_ros" type="pcd_to_pointcloud"
           args="$(find jsk_pr2_plugs)/data/outlet.pcd 1.0"
+          if="$(arg debug)"
           output="screen">
       <remap from="cloud_pcd" to="$(arg input_cloud)" />
     </node>

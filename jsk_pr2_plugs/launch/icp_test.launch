@@ -60,12 +60,15 @@
               to: input_relay/output
             - from: ~input_reference
               to: template_server/output
+            - from: ~input_plane
+              to: pose_pub/plane
       </rosparam>
     </node>
     <group ns="outlet_registration">
       <rosparam>
         correspondence_algorithm: 0
         use_normal: false
+        use_plane: true
       </rosparam>
     </group>
   </group>

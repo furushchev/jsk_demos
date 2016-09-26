@@ -1,0 +1,59 @@
+<launch>
+  <arg name="input_cloud" default="/kinect_head_c2/depth_registered/points" />
+  <arg name="base_frame_id" default="/base_footprint" />
+
+  <include file="$(find jsk_data)/launch/pr2_play.launch">
+    <arg name="bagfile_names" value="$(find jsk_pr2_plugs)/data/outlet_2016-08-11-07-07-09.bag"/>
+    <arg name="use_xterm" value="true" />
+    <arg name="rosbag_option" value="--clock --pause --loop" />
+  </include>
+
+  <group ns="outlet_tracking">
+    <node name="template_server"
+          pkg="pcl_ros" type="pcd_to_pointcloud"
+          args="$(find jsk_pr2_plugs)/data/outlet.pcd 0"
+          output="screen">
+      <remap from="cloud_pcd" to="~output" />
+    </node>
+    <node name="nodelet_manager"
+          pkg="jsk_topic_tools" type="standalone_complexed_nodelet"
+          output="screen">
+      <rosparam subst_value="true">
+        nodelets:
+        - name: input_relay
+          type: jsk_topic_tools/Relay
+          remappings:
+            - from: ~input
+              to: $(arg input_cloud)
+        - name: plane_segmentation
+          type: jsk_pcl/OrganizedMultiPlaneSegmentation
+          remappings:
+            - from: ~input
+              to: input_relay/output
+        - name: polygon_transform
+          type: jsk_pcl_utils/PolygonArrayTransformer
+          remappings:
+            - from: ~input_polygons
+              to: plane_segmentation/output_refined_polygon
+            - from: ~input_coefficients
+              to: plane_segmentation/output_refined_coefficients
+        - name: icp
+          type: jsk_pcl/ICPRegistration
+          remappings:
+            - from: ~input
+              to: input_relay/output
+            - from: ~input_reference
+              to: template_server/output
+            - from: ~input_polygon
+              to: polygon_transform/output_polygons
+            - from: ~input_coefficients
+              to: polygon_transform/output_coefficients
+      </rosparam>
+    </node>
+    <group ns="polygon_transform">
+      <rosparam subst_value="true">
+        frame_id: $(arg base_frame_id)
+      </rosparam>
+    </group>
+  </group>
+</launch>
