@@ -1,0 +1,11 @@
+<launch>
+  <arg name="record_video" default="true" />
+  <arg name="video_dir" default="$(find simple_fetch_and_place_pr2)/video" />
+
+  <node name="record_camera_kitchen_sink"
+        pkg="simple_fetch_and_place_pr2" type="video_saver.py"
+        if="$(arg record_video)">
+    <remap from="image" to="/scene_camera_kitchen_sink/rgb/image_raw" />
+    <param name="video_path" value="$(arg video_dir)/kitchen_sink.avi" />
+  </node>
+</launch>

@@ -17,6 +17,8 @@
     (setq scene (send eng2 :object "/eng2/7f/73b2"))
     (send (send scene :spot "table-spot")
           :translate (float-vector -1000 -1000 0) :world)
+    (send (send scene :spot "cook-spot")
+          :translate (float-vector 0 -700 0))
     scene))
 
 (defun task-compiler/before-run-hook (&optional sm)
@@ -35,6 +37,7 @@
   ;; visualization
   (objects (list *pr2* *scene*))
   (send *ri* :objects (list *scene*))
+
   (start-task :pr2-fetch-and-place)
   )
 
