@@ -1,0 +1,10 @@
+<launch>
+  <include file="$(find jsk_2017_01_pr2_longterm)/launch/gazebo_fetch_with_object.launch" />
+  <include file="$(find jsk_2017_01_pr2_longterm)/launch/icp_2d.launch" />
+  <node name="rviz" pkg="rviz" type="rviz"
+        args="-d $(find jsk_2017_01_pr2_longterm)/config/fetch.rviz"
+        respawn="true" />
+  <node name="fetcheus" pkg="roseus" type="roseus"
+        args="$(find jsk_2017_01_pr2_longterm)/euslisp/fetch-icp-test.l"
+        output="screen" />
+</launch>
