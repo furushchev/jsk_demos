@@ -8,7 +8,7 @@
   <group ns="outlet_detection">
     <node name="template_server"
           pkg="pcl_ros" type="pcd_to_pointcloud"
-          args="$(find jsk_2017_01_pr2_longterm)/data/$(arg object_name).pcd 0">
+          args="$(find jsk_2017_01_pr2_longterm)/data/$(arg object_name).pcd 1">
       <remap from="cloud_pcd" to="~output"/>
     </node>
     <node name="nodelet_manager"

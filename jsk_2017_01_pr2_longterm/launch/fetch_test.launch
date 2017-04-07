@@ -1,6 +1,8 @@
 <launch>
   <include file="$(find jsk_2017_01_pr2_longterm)/launch/gazebo_fetch_with_object.launch" />
-  <include file="$(find jsk_2017_01_pr2_longterm)/launch/icp_2d.launch" />
+  <include file="$(find jsk_2017_01_pr2_longterm)/launch/icp_2d.launch">
+    <arg name="object_name" value="pr2_dock"/>
+  </include>
   <node name="rviz" pkg="rviz" type="rviz"
         args="-d $(find jsk_2017_01_pr2_longterm)/config/fetch.rviz"
         respawn="true" />
