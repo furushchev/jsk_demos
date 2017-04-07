@@ -1,0 +1,12 @@
+<launch>
+  <include file="$(find jsk_pr2_startup)/pr2_gazebo.launch">
+    <arg name="world" value="$(find simple_fetch_and_place_pr2)/worlds/grasp_test.world"/>
+    <arg name="num_worker_threads" value="8" />
+  </include>
+
+  <include file="$(find simple_fetch_and_place_pr2)/launch/gazebo_fake_perception.launch" />
+
+  <node name="grasp_test" pkg="roseus" type="roseus"
+        args="$(find simple_fetch_and_place_pr2)/euslisp/grasp-test.l"
+        output="screen" />
+</launch>
