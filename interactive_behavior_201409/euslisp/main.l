@@ -4,7 +4,7 @@
 (require :pr2-behavior-utils "pr2-behavior-utils.l")
 
 (ros::roseus-add-msgs "people_msgs")
-(ros::roseus-add-msgs "face_recognition")
+(ros::roseus-add-msgs "opencv_apps")
 (ros::roseus-add-msgs "jsk_hark_msgs")
 (ros::roseus-add-msgs "geometry_msgs")
 (ros::roseus "interactive_behavior_server")
@@ -143,10 +143,6 @@
  "/face_recognition/feedback"
  face_recognition::FaceRecognitionActionFeedback
  #'face-recognition-feedback-cb)
-(ros::subscribe
- "/people"
- people_msgs::People
- #'people-cb)
 (ros::subscribe
  "/sound_direction"
  geometry_msgs::Vector3Stamped
