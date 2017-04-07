@@ -29,6 +29,8 @@ add_message_files(
   FILES
   EventHeader.msg
   FunctionEvent.msg
+  Context.msg
+  ActionEvent.msg
 )
 
 generate_messages(
