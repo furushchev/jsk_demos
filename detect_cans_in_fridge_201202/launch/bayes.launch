@@ -1,0 +1,187 @@
+<launch>
+  <arg name="cloud_input" default="/kinect_head/depth_registered/points" />
+  <arg name="manager" default="bayes_nodelet_manager" />
+  <arg name="vital_rate" default="0.1" />
+  <arg name="sensor_frame_id" default="/head_mount_kinect_rgb_optical_frame" />
+
+  <include file="$(find pr2_machine)/pr2.machine" />
+
+  <node name="$(arg manager)"
+        pkg="nodelet" type="nodelet" args="manager" output="screen" machine="c2" />
+
+  <group ns="bayes">
+    <node name="input_relay" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_topic_tools/Relay /$(arg manager)">
+      <remap from="~input" to="$(arg cloud_input)" />
+    </node>
+    <node name="bilateral_filter" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/BilateralFilter /$(arg manager)">
+      <remap from="~input" to="input_relay/output" />
+      <rosparam subst_value="true">
+        sigma_s: 1.0
+        sigma_r: 0.1
+        vital_rate: $(arg vital_rate)
+      </rosparam>
+    </node>
+    <node name="organized_multi_plane_segmentation" pkg="nodelet" type="nodelet"
+          machine="c2"
+        args="load jsk_pcl/OrganizedMultiPlaneSegmentation /$(arg manager)">
+      <remap from="~input" to="bilateral_filter/output" />
+      <rosparam subst_value="true">
+        max_curvature: 0.01
+        estimate_normal: true
+        publish_normal: true
+        vital_rate: $(arg vital_rate)
+      </rosparam>
+    </node>
+    <node name="plane_concatenator" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/PlaneConcatenator /$(arg manager)">
+      <remap from="~input" to="bilateral_filter/output" />
+      <remap from="~input/indices" to="organized_multi_plane_segmentation/output_refined" />
+      <remap from="~input/polygons" to="organized_multi_plane_segmentation/output_refined_polygon" />
+      <remap from="~input/coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients" />
+      <rosparam subst_value="true">
+        connect_distance_threshold: 0.2
+        min_area: 0.3
+        max_area: 0.4
+        vital_rate: $(arg vital_rate)
+      </rosparam>
+    </node>
+    <node name="multi_plane_extraction" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/MultiPlaneExtraction /$(arg manager)">
+      <remap from="~input" to="bilateral_filter/output" />
+      <remap from="~indices" to="plane_concatenator/output/indices" />
+      <remap from="~input_polygons" to="plane_concatenator/output/polygons" />
+      <remap from="~input_coefficients" to="plane_concatenator/output/coefficients" />
+      <rosparam subst_value="true">
+        use_sensor_frame: true
+        sensor_frame: $(arg sensor_frame_id)
+        min_height: 0.03
+        vital_rate: $(arg vital_rate)
+      </rosparam>
+    </node>
+    <node name="euclidean_clustering" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/EuclideanClustering /$(arg manager)">
+      <remap from="~input" to="multi_plane_extraction/output" />
+      <rosparam subst_value="true">
+        tolerance: 0.05
+        min_size: 300
+        vital_rate: $(arg vital_rate)
+      </rosparam>
+    </node>
+    <node name="euclidean_segmentation_decomposer" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/ClusterPointIndicesDecomposer /$(arg manager)">
+      <remap from="~input" to="multi_plane_extraction/output" />
+      <remap from="~target" to="euclidean_clustering/output" />
+      <remap from="~align_planes" to="plane_concatenator/output/polygons" />
+      <remap from="~align_planes_coefficients" to="plane_concatenator/output/coefficients" />
+      <rosparam subst_value="true">
+        align_boxes: true
+        align_boxes_with_plane: true
+        use_pca: true
+        publish_clouds: false
+        publish_tf: false
+        vital_rate: $(arg vital_rate)
+      </rosparam>
+    </node>
+
+    <!-- primitive shape classifier -->
+    <node name="primitive_shape_classifier" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/PrimitiveShapeClassifier /$(arg manager)">
+      <remap from="~input" to="bilateral_filter/output" />
+      <remap from="~input/normal" to="organized_multi_plane_segmentation/output_normal" />
+      <remap from="~input/indices" to="euclidean_clustering/output" />
+      <remap from="~input/polygons" to="plane_concatenator/output/polygons" />
+      <rosparam subst_value="true">
+        box_threshold: 0.0
+        circle_threshold: 0.5
+        vital_rate: $(arg vital_rate)
+      </rosparam>
+    </node>
+
+    <node name="primitive_class_vis" pkg="jsk_rviz_plugins" type="classification_result_visualizer.py"
+          machine="c2">
+      <remap from="~input/boxes" to="euclidean_segmentation_decomposer/boxes"/>
+      <remap from="~input/classes" to="primitive_shape_classifier/output" />
+      <rosparam>
+        text_color: [1.0, 0.0, 0.0, 1.0]
+        text_offset: [0.0, -0.09, 0.0]
+        text_size: 0.05
+      </rosparam>
+    </node>
+
+    <!-- color histogram classifier -->
+    <node name="color_histogram" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/ColorHistogram /$(arg manager)">
+      <remap from="~input" to="bilateral_filter/output" />
+      <remap from="~input/indices" to="euclidean_clustering/output" />
+      <rosparam subst_value="true">
+        bin_size: 10
+        histogram_policy: 0
+        white_threshold: 0.4
+      </rosparam>
+    </node>
+
+    <node name="color_histogram_classifier" pkg="nodelet" type="nodelet"
+          machine="c2"
+          args="load jsk_pcl/ColorHistogramClassifier /$(arg manager)">
+      <remap from="~input/array" to="color_histogram/output" />
+      <remap from="~input/indices" to="euclidean_clustering/output" />
+      <rosparam command="load" file="$(find detect_cans_in_fridge_201202)/config/object_bayes.yaml" />
+      <rosparam subst_value="true">
+        detection_threshold: 0.2
+        compare_policy: 0
+      </rosparam>
+    </node>
+
+    <node name="color_class_vis" pkg="jsk_rviz_plugins" type="classification_result_visualizer.py"
+          machine="c2">
+      <remap from="~input/boxes" to="euclidean_segmentation_decomposer/boxes"/>
+      <remap from="~input/classes" to="color_histogram_classifier/output" />
+      <rosparam>
+        text_color: [0.0, 1.0, 0.0, 1.0]
+        text_offset: [0.0, -0.05, 0.0]
+        text_size: 0.05
+      </rosparam>
+    </node>
+
+    <node name="color_hist_vis" pkg="jsk_pcl_ros" type="color_histogram_visualizer.py"
+          machine="c2">
+      <remap from="~input/array" to="color_histogram/output" />
+      <rosparam>
+        histogram_policy: 0
+        histogram_index: 1
+      </rosparam>
+    </node>
+
+    <!-- volume classifier -->
+    <node name="volume_classifier" pkg="jsk_pcl_ros" type="boundingbox_volume_classifier.py"
+          machine="c2">
+      <remap from="~input" to="euclidean_segmentation_decomposer/boxes"/>
+      <rosparam>
+        threshold: 0.7
+      </rosparam>
+    </node>
+
+    <node name="volume_class_vis" pkg="jsk_rviz_plugins" type="classification_result_visualizer.py"
+          machine="c2">
+      <remap from="~input/boxes" to="euclidean_segmentation_decomposer/boxes"/>
+      <remap from="~input/classes" to="volume_classifier/output" />
+      <rosparam>
+        text_color: [0.0, 0.0, 1.0, 1.0]
+        text_offset: [0.0, -0.12, 0.0]
+        text_size: 0.05
+      </rosparam>
+    </node>
+
+  </group>
+
+</launch>

@@ -1,0 +1,31 @@
+<launch>
+  <node name="primitive_class_vis" pkg="jsk_rviz_plugins" type="classification_result_visualizer.py">
+    <remap from="~input/boxes" to="/primitive_shape_classifier/euclidean_segmentation_decomposer/boxes"/>
+    <remap from="~input/classes" to="/primitive_shape_classifier/primitive_shape_classifier/output" />
+    <rosparam>
+      text_color: [1.0, 0.0, 0.0, 1.0]
+      text_offset: [0.0, -0.07, 0.0]
+      text_size: 0.05
+    </rosparam>
+  </node>
+  <node name="color_class_vis" pkg="jsk_rviz_plugins" type="classification_result_visualizer.py">
+    <remap from="~input/boxes" to="/primitive_shape_classifier/euclidean_segmentation_decomposer/boxes"/>
+    <remap from="~input/classes" to="/primitive_shape_classifier/primitive_shape_classifier/output" />
+    <rosparam>
+      text_color: [1.0, 0.0, 0.0, 1.0]
+      text_offset: [0.0, -0.09, 0.0]
+      text_size: 0.05
+    </rosparam>
+  </node>
+  <node name="volume_class_vis" pkg="jsk_rviz_plugins" type="classification_result_visualizer.py">
+    <remap from="~input/boxes" to="/primitive_shape_classifier/euclidean_segmentation_decomposer/boxes"/>
+    <remap from="~input/classes" to="/primitive_shape_classifier/primitive_shape_classifier/output" />
+    <rosparam>
+      text_color: [1.0, 0.0, 0.0, 1.0]
+      text_offset: [0.0, -0.09, 0.0]
+      text_size: 0.05
+    </rosparam>
+  </node>
+
+
+</launch>
