@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<package>
+  <name>jsk_2017_home_butler</name>
+  <version>0.0.0</version>
+  <description>The jsk_2017_home_butler package</description>
+  <maintainer email="furushchev@jsk.imi.i.u-tokyo.ac.jp">Yuki Furuta</maintainer>
+  <license>BSD</license>
+  <author email="furushchev@jsk.imi.i.u-tokyo.ac.jp">Yuki Furuta</author>
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>message_generation</build_depend>
+  <run_depend>message_runtime</run_depend>
+
+  <export>
+  </export>
+</package>
