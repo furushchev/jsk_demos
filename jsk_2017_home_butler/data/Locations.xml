@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rooms>
+  <room name="living room"> <!-- room610 -->
+    <location name="sideboard" />
+    <location name="washingmachine" />
+    <location name="tv stand" />
+    <location name="microwave" />
+    <location name="dining table" />
+    <location name="fridge" />
+    <location name="kitchen sink" />
+    <location name="kitchen table" />
+    <location name="dishwasher" />
+    <location name="kitchen drawer" />
+    <location name="left rack" />
+    <location name="right rack" />
+    <location name="living drawer" />
+    <location name="office desk" />
+    <location name="coffee table" />
+  </room>
+  <room name="bedroom"> <!-- room602 -->
+    <location name="mini desk" />
+    <location name="bed" />
+  </room>
+  <room name="corridor">
+    <location name="corridor" />
+  </room>
+  <room name="entrance">
+    <location name="elevator front" />
+  </room>
+</rooms>

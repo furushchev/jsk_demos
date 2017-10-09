@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<questions>
+  <question>
+    <q>What city are we in?</q>
+    <a>Nagoya</a>
+  </question>
+  <question>
+    <q>What is the name of your team?</q>
+    <a>JSK at Home.</a>
+  </question>
+  <question>
+    <q>How many teams participate in RoboCup@Home this year?</q>
+    <a>31</a>
+  </question>
+  <question>
+    <q>Who won the popular vote in the US Election?</q>
+    <a>Hillary Clinton</a>
+  </question>
+  <question>
+    <q>What is the highest mountain in Japan?</q>
+    <a>Mount Fuji</a>
+  </question>
+  <question>
+    <q>Name the two RoboCup@Home standard platforms.</q>
+    <a>Pepper and HSR</a>
+  </question>
+  <question>
+    <q>What does DSPL stand for?</q>
+    <a>Domestic Standard Platform League.</a>
+  </question>
+  <question>
+    <q>What does SSPL stand for?</q>
+    <a>Social Standard Platform League.</a>
+  </question>
+  <question>
+    <q>Who did Alphabet sell Boston Dynamics to?</q>
+    <a>SoftBank.</a>
+  </question>
+  <question>
+    <q>Nagoya has one of the largest train stations in the world - how large is it?</q>
+    <a>over 410000 square metres.</a>
+  </question>
+  <question>
+    <q>Where is your team located?</q>
+    <a>Tokyo, Japan.</a>
+  </question>
+  <question>
+    <q>Who created Star Wars?</q>
+    <a>George Lucas</a>
+  </question>
+  <question>
+    <q>Who lives in a pineapple under the sea?</q>
+    <a>Sponge Bob Squarepants!</a>
+  </question>
+  <question>
+    <q>Who is Grace Hopper?</q>
+    <a>the inventor of the first compiler.</a>
+  </question>
+</questions>

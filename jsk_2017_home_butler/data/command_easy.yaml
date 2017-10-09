@@ -1,0 +1,53 @@
+verbs:
+  - basis: answer
+    synonyms:
+      - answer
+  - basis: bring
+    synonyms:
+      - bring
+      - give
+  - basis: deliver
+    synonyms:
+      - deliver
+      - bring
+      - give
+  - basis: find
+    synonyms:
+      - find
+      - locate
+      - look for
+  - basis: go
+    synonyms:
+      - go
+      - navigate
+  - basis: place
+    synonyms:
+      - place
+      - put
+  - basis: speak
+    synonyms:
+      - tell
+      - say
+  - basis: take
+    synonyms:
+      - get
+      - grasp
+      - take
+      - pick up
+commands:
+  # find people
+  # FIND_PEOPLE : TALK to WHOWHERE
+  - $speak bla bla to $name at the $placement
+  - $answer a question to $name at the $placement
+  # FIND_PEOPLE : FINDP in the N_ROOM and TALK
+  - $find $name at the $placement in the $placement and $speak bla bla
+  - $find $name at the $placement in the $placement and $answer a question
+  # FIND_PEOPLE : GOROOM FINDP and TALK
+  - $go to the $placement $find in $name at the $placement and $speak bla bla
+  - $go to the $placement $find in $name at the $placement and $answer a question
+  # FIND_PEOPLE : tell me the name of the person at the N_BEACON
+  - tell me the name of the person at the $placement
+  # FIND_OBJECT : VB_FIND the N_OBJECT
+  - $find the $object
+  # FIND_OBJECT : VB_FIND the N_OBJECT in the N_ROOM
+  - $find the object in the $placement

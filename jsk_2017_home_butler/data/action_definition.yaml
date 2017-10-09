@@ -1,0 +1,34 @@
+---
+action_definitions:
+  - type: pick
+    name: [pick, take, get, pick up, grasp]
+    arguments: [location, object]
+    format: '{name} {object} at {location}'
+  - type: place
+    name: [place, put]
+    arguments: [location, object]
+    format: '{name} {object} at {location}'
+  - type: speak
+    name: [speak, speech, answer, tell, say]
+    arguments: [content, person, location]
+    format: '{name} {content} to {person} at {location}'
+  - type: findobj
+    name: [find, look for, locate]
+    arguments: [location, object, question]
+    format: '{name} {object}{question} at {location}'
+  - type: findppl
+    name: [find, look for]
+    arguments: [location, person, question]
+    format: '{name} {person}{question} at {location}'
+  - type: go
+    name: [go, navigate, enter]
+    arguments: [location]
+    format: '{name} to {location}'
+  - type: deliver
+    name: [deliver, give, hand, bring]
+    arguments: [location, object, person]
+    format: '{name} {object} to {person} at {location}'
+  - type: follow
+    name: [follow]
+    arguments: [person]
+    format: '{name} {person}'

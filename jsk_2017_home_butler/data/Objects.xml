@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<categories>
+  <category name="snack" defaultLocation="living drawer" room="kitchen">
+    <object name="curry" difficulty="easy" weight="110" size="300" />
+    <object name="chewing gum" difficulty="easy" weight="180" size="210" />
+    <object name="fries" difficulty="easy" weight="65" size="310" />
+    <object name="candy" difficulty="easy" weight="120" size="190" />
+    <object name="jelly" difficulty="easy" weight="260" size="270" />
+    <object name="cup star" difficulty="easy" weight="106" size="310" />
+  </category>
+
+  <category name="food" defaultLocation="kitchen shelf" room="kitchen">
+    <object name="radish" difficulty="easy" weight="400" size="300" />
+    <object name="onion" difficulty="easy" weight="130" size="180" />
+    <object name="corn" difficulty="easy" weight="340" size="380" />
+    <object name="bread" difficulty="easy" weight="380" size="470" />
+  </category>
+
+  <category name="fruit" defaultLocation="bistro table" room="balcony">
+    <object name="apple" difficulty="easy" weight="160" size="200" />
+    <object name="orange" difficulty="easy" weight="200" size="240" />
+  </category>
+
+  <category name="drink" defaultLocation="kitchen counter" room="kitchen">
+    <object name="green tea" difficulty="easy" weight="555" size="340" />
+    <object name="aquarius" difficulty="easy" weight="525" size="340" />
+    <object name="cold brew" difficulty="easy" weight="290" size="250"/>
+    <object name="coke" difficulty="easy" weight="330" size="280" />
+  </category>
+
+  <category name="container" defaultLocation="left rack" room="living room">
+    <object name="plate" difficulty="easy" weight="250" size="560" />
+    <object name="soup container" difficulty="easy" weight="42" size="230" />
+    <object name="bowl" difficulty="easy" weight="150" size="350" />
+  </category>
+
+  <category name="cutlery" defaultLocation="sideboard" room="kitchen">
+    <object name="chopsticks" difficulty="easy" weight="5" size="210" />
+    <object name="fork" difficulty="easy" weight="5" size="160" />
+    <object name="spoon" difficulty="easy" weight="5" size="160" />
+  </category>
+
+  <category name="cleaning stuff" defaultLocation="right rack" room="living room">
+    <object name="shampoo" difficulty="easy" weight="370" size="310" />
+    <object name="asience" difficulty="easy" weight="349" size="300" />
+    <object name="hair spray" difficulty="easy" weight="260" size="310" />
+    <object name="moisturizer" difficulty="easy" weight="150" size="250" />
+  </category>
+
+</categories>
