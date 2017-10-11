@@ -1,0 +1,134 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# Author: Furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
+
+import actionlib
+import rospy
+from sound_play.msg import SoundRequest
+from sound_play.msg import SoundRequestAction, SoundRequestGoal
+from speech_recognition_msgs.srv import SpeechRecognition
+from jsk_2017_home_butler.classifier import WordClassifier
+
+
+_ACTION_CLIENTS = {}
+
+
+class SpeechMixin(object):
+    def say(self, text, lang="", wait=True, timeout=10, ns=None):
+
+        msg = SoundRequest(
+            sound=SoundRequest.SAY,
+            command=SoundRequest.PLAY_ONCE,
+            arg=text,
+            arg2=lang)
+
+        if ns is None:
+            if lang == "ja":
+                ns = "robotsound_jp"
+            else:
+                ns = "robotsound"
+        if ns not in _ACTION_CLIENTS:
+            _ACTION_CLIENTS[ns] = actionlib.SimpleActionClient(ns, SoundRequestAction)
+        ac = _ACTION_CLIENTS[ns]
+        if not ac.wait_for_server(rospy.Duration(1)):
+            rospy.logwarn("Action server /%s not found." % ns)
+            del _ACTION_CLIENTS[ns]
+
+            pub = rospy.Publisher(ns, SoundRequest, queue_size=1)
+            if pub.get_num_connections() == 0:
+                rospy.sleep(1)
+            pub.publish(msg)
+            sleep_length = len(msg.arg) * 0.1 + 0.2
+            if wait:
+                rospy.sleep(sleep_length)
+            if pub.get_num_connections() == 0:
+                rospy.loginfo("Robot said: %s" % msg.arg)
+        else:
+            goal = SoundRequestGoal(sound_request=msg)
+            ac.send_goal(goal)
+            if wait:
+                ac.wait_for_result(timeout=rospy.Duration(timeout))
+        return True
+
+    def listen(self, duration=3.0, retry=2, grammar=None, threshold=0.9, choices=None, ns=None):
+        """Listen to speech.
+        Either choices or grammar must be specified.
+
+        Args:
+            choices ([str], default: None):
+                Candidate words to be recognized
+                Enabled only for julius engine with isolated word recognition
+            duration (float, default: 3.0):
+                Maximum duration to listen
+            quiet (bool, default: False):
+                Sounds on start and end of listening if true
+            retry (int, default: 2):
+                Number of retry to listen
+            grammar (str, default: None):
+                Grammar name to be recognized
+                Enabled only for julius engine with grammar recognition
+            threshold (float, default: None):
+                Threshold for speech recognition.
+            ns (string, default: None):
+                namespace for speech-to-text service
+        Returns:
+            Speech sentence if successfully recognized.
+            Returns None otherwise.
+        Example:
+            choice = self.listen(choices=['はい', 'いいえ'])
+            or
+            sentence = self.listen(grammar='gpsr_en')
+        """
+
+        ns = ns or "speech_recognition"
+
+        try:
+            rospy.wait_for_service(ns, timeout=1)
+        except rospy.ROSException as e:
+            rospy.logerr("service /%s not yet advertised?" % ns)
+            return ''
+
+        sr = rospy.ServiceProxy(ns, SpeechRecognition)
+
+        while retry >= 0:
+            if rospy.is_shutdown():
+                return ''
+            retry -= 1
+            result = sr(duration=duration,
+                        quiet=quiet,
+                        threshold=threshold)
+            if res.result.transcript:
+                return res.result.transcript[0]
+
+        rospy.logerr("Could not recognize speech")
+        return ''
+
+    def ask(self, query, retry=2, **kwargs):
+        """Ask question by speaking and get answer by listening
+
+        Args:
+            query (string):
+                Question
+            For other arguments, see method `listen`.
+        Returns:
+            Answer sentence if successfully recognized.
+            Returns None otherwise.
+        """
+        while retry >= 0:
+            if rospy.is_shutdown():
+                return ''
+            retry -= 1
+            self.say(query, wait=True)
+            rospy.sleep(0.5)
+            answer = self.listen(retry=0, **kwargs)
+            if answer:
+                return answer
+
+        rospy.logerr("Failed to get answer for the query")
+        return ''
+
+
+if __name__ == '__main__':
+    rospy.init_node("utils")
+    m = SpeechMixin()
+    m.say("test", ns="robotsound")

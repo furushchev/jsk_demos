@@ -21,7 +21,7 @@ except:
 
 PKG_PATH = rospkg.RosPack().get_path("jsk_2017_home_butler")
 
-class CommandClassifier(object):
+class WordClassifier(object):
     def __init__(self, classifier='randomforest',
                  use_phonemes=False, additional_dict_path=None,
                  debug=False):
@@ -182,7 +182,7 @@ if __name__ == '__main__':
         locations += [l["room"] for l in loader.locations]
         locations = list(set(locations))
         print locations
-        i = CommandClassifier(use_phonemes=True, debug=True)
+        i = WordClassifier(use_phonemes=True, debug=True)
 
         print "--- learning ---"
         i.fit(locations)
@@ -214,7 +214,7 @@ if __name__ == '__main__':
         objects = [o["name"] for o in loader.objects]
         objects += [o["category"] for o in loader.objects]
         objects = list(set(objects))
-        i = CommandClassifier(use_phonemes=True, debug=True)
+        i = WordClassifier(use_phonemes=True, debug=True)
         print "--- learning ---"
         i.fit(objects)
 

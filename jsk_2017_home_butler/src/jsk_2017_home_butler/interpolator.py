@@ -6,7 +6,7 @@ import copy
 import rospy
 from jsk_2017_home_butler.action_loader import ActionLoader
 from jsk_2017_home_butler.resource_loader import ResourceLoader
-from jsk_2017_home_butler.classifier import CommandClassifier
+from jsk_2017_home_butler.classifier import WordClassifier
 from jsk_2017_home_butler.detection_interface import UnknownObjectDatabase
 
 
@@ -45,13 +45,13 @@ class CommandInterpolator(object):
             objects = [o["name"] for o in self.resource.objects]
             objects += [o["category"] for o in self.resource.objects]
             objects = list(set(objects))
-            self.obj_clf = CommandClassifier(use_phonemes=True)
+            self.obj_clf = WordClassifier(use_phonemes=True)
             self.obj_clf.fit(objects)
 
             locations = [l["location"] for l in self.resource.locations]
             locations += [l["room"] for l in self.resource.locations]
             locations = list(set(locations))
-            self.loc_clf = CommandClassifier(use_phonemes=True)
+            self.loc_clf = WordClassifier(use_phonemes=True)
             self.loc_clf.fit(locations)
 
     def align_object(self, cmd, valid, cmds, state, threshold=0.5):
