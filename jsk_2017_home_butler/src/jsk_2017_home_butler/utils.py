@@ -10,12 +10,18 @@ from speech_recognition_msgs.srv import SpeechRecognition
 from jsk_2017_home_butler.classifier import WordClassifier
 
 
+def snake_to_camel(text):
+    return str().join(s.title() for s in text.split('_'))
+
+
+def camel_to_snake(text):
+    return re.sub('([A-Z])', lambda s: '_' + s.group(1).lower(), text)
+
+
 _ACTION_CLIENTS = {}
-
-
 class SpeechMixin(object):
     def say(self, text, lang="", wait=True, timeout=10, ns=None):
-
+        global _ACTION_CLIENTS
         msg = SoundRequest(
             sound=SoundRequest.SAY,
             command=SoundRequest.PLAY_ONCE,
@@ -50,7 +56,7 @@ class SpeechMixin(object):
                 ac.wait_for_result(timeout=rospy.Duration(timeout))
         return True
 
-    def listen(self, duration=3.0, retry=2, grammar=None, threshold=0.9, choices=None, ns=None):
+    def listen(self, duration=3.0, retry=2, grammar=None, threshold=0.9, choices=None, quiet=False, ns=None):
         """Listen to speech.
         Either choices or grammar must be specified.
 
@@ -94,9 +100,9 @@ class SpeechMixin(object):
             if rospy.is_shutdown():
                 return ''
             retry -= 1
-            result = sr(duration=duration,
-                        quiet=quiet,
-                        threshold=threshold)
+            res = sr(duration=duration,
+                     quiet=quiet,
+                     threshold=threshold)
             if res.result.transcript:
                 return res.result.transcript[0]
 
@@ -131,4 +137,4 @@ class SpeechMixin(object):
 if __name__ == '__main__':
     rospy.init_node("utils")
     m = SpeechMixin()
-    m.say("test", ns="robotsound")
+    print "answer:", m.ask("Test")

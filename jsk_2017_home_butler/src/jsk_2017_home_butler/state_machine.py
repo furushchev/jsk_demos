@@ -7,8 +7,10 @@ import rospy
 from smach import StateMachine
 from smach_ros import SimpleActionState
 
-from actionlib_tutorials.msg import FibonacciAction
-from jsk_2017_home_butler.msg import ListenCommandAction
+from jsk_2017_home_butler.utils import camel_to_snake
+from jsk_2017_home_butler.actions import ListenCommandAction
+from jsk_2017_home_butler.actions import WaitForCommandAction
+
 from jsk_2017_home_butler.msg import AnswerQuestionAction
 from jsk_2017_home_butler.msg import FindObjectAction
 from jsk_2017_home_butler.msg import FindPersonAction
@@ -20,6 +22,7 @@ from jsk_2017_home_butler.msg import SpeakAction
 
 
 def hoge():
+    from actionlib_tutorials.msg import FibonacciAction
     StateMachine.add(
         'fib',
         SimpleActionState('fibonacci', FibonacciAction,
@@ -37,17 +40,14 @@ def test_smach():
         hoge()
     return sm
 
-def snake_to_camel(text):
-    return str().join(s.title() for s in text.split('_'))
-
 def make_action(name, spec,
                 succeeded='succeeded', failed='failed',
                 goal={}, result={}):
     remapping = goal.copy()
     remapping.update(result)
     StateMachine.add(
-        snake_to_camel(name),
-        SimpleActionState(name, spec,
+        name,
+        SimpleActionState(camel_to_snake(name), spec,
                           goal_slots=goal.keys(),
                           result_slots=result.keys()),
         transitions={'succeeded': succeeded,
@@ -58,11 +58,15 @@ def make_action(name, spec,
 def make_state_machine():
     sm = StateMachine(['succeeded', 'failed'])
     with sm:
-        make_action('wait_for_command', WaitForCommandAction,
-                    succeeded='listen_command', failed='wait_for_command')
-        make_action('listen_command', ListenCommandAction,
-                    succeeded='run_command', failed='wait_for_command',
-                    result={'task': 'commands'})
+        StateMachine.add('WaitForCommand', WaitForCommandAction,
+                         transitions={'succeeded': 'ListenCommand',
+                                      'failed': 'WaitForCommand'})
+        StateMachine.add('ListenCommand',
+                         ListenCommandAction,
+                         transitions={'succeeded': 'RunCommand',
+                                      'failed': 'WaitForCommand'},
+                         remapping={'query': 'query',
+                                    'commands': 'commands'})
         # TODO: run_command
         # TODO: recover
         make_action('find_person', FindPersonAction,
