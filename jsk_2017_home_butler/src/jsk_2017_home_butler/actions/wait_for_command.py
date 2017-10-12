@@ -13,7 +13,22 @@ class WaitForCommandAction(State):
 
     def execute(self, userdata=None):
         rospy.sleep(20)  # FIXME: implement active attention estimation
+        return 'succeeded'
 
 
 if __name__ == '__main__':
-    pass
+    from smach import StateMachine
+
+    rospy.init_node("wait_for_command")
+
+    ac = WaitForCommandAction()
+
+    sm = StateMachine(outcomes=['succeeded', 'failed'])
+    with sm:
+        StateMachine.add("wait_for_command", ac,
+                         transitions={'succeeded': 'succeeded',
+                                      'failed': 'failed'})
+    result = sm.execute()
+
+    print "result:", result
+

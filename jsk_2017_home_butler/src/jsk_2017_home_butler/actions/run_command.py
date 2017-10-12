@@ -21,4 +21,18 @@ class RunCommandAction(State, SpeechMixin):
 
 
 if __name__ == '__main__':
-    pass
+    from smach import StateMachine
+
+    rospy.init_node("run_command")
+
+    ac = RunCommandAction()
+
+    sm = StateMachine(outcomes=['succeeded', 'failed'])
+    with sm:
+        StateMachine.add("run_command", ac,
+                         transitions={'succeeded': 'succeeded',
+                                      'failed': 'failed'})
+
+    result = sm.execute()
+
+    print "result:", result, "arguments:", sm.userdata.arguments

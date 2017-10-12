@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Author: Furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
+import re
 import actionlib
 import rospy
 from sound_play.msg import SoundRequest
@@ -92,7 +93,7 @@ class SpeechMixin(object):
             rospy.wait_for_service(ns, timeout=1)
         except rospy.ROSException as e:
             rospy.logerr("service /%s not yet advertised?" % ns)
-            return ''
+            return raw_input("Please input sentence: ")
 
         sr = rospy.ServiceProxy(ns, SpeechRecognition)
 

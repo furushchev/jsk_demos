@@ -4,19 +4,28 @@
 
 import rospy
 from smach import State
+from jsk_2017_home_butler.action_loader import ActionLoader
+from jsk_2017_home_butler.preprocessor import CommandPreprocessor
+from jsk_2017_home_butler.command_parser import CommandParser
+from jsk_2017_home_butler.interpolator import CommandInterpolator
+from jsk_2017_home_butler.interpolator import UnknownSymbolError
 from jsk_2017_home_butler.utils import SpeechMixin
 
 
 class ListenCommandAction(State, SpeechMixin):
-    def __init__(self):
+    def __init__(self, app_id=None, app_key=None):
+
+        self.preprocessor = CommandPreprocessor()
+        self.parser = CommandParser(app_id=app_id, app_key=app_key)
+        self.interpolator = CommandInterpolator()
+
+        self.action_loader = ActionLoader()
+
         State.__init__(self,
                        outcomes=['succeeded', 'failed'],
                        output_keys=['query'])
 
-    def execute(self, userdata=None):
-        self.say("Hi!")
-        rospy.sleep(0.3)
-        answer = ""
+    def listen_query(self):
         for i in range(3):
             if i == 0:
                 query = "May I help you?"
@@ -24,33 +33,115 @@ class ListenCommandAction(State, SpeechMixin):
                 query = "Please say again?"
             answer = self.ask(query, duration=15.0, threshold=0.6)
             if answer:
-                break
+                return answer
             self.say("Sorry, I cannot get you.")
+        return ""
 
-        if not answer:
+    def recognize(self, query):
+        rospy.loginfo("Query: %s", query)
+
+        query = self.preprocessor.process(query)
+        if not query:
+            rospy.logerr("Failed to preprocess")
+            return None
+        rospy.loginfo("Preprocessed: %s" % query)
+
+        actions = self.parser.parse_command(query, self.action_loader)
+        if not actions:
+            rospy.logerr("Failed to parse actions")
+            return None
+
+        return actions
+
+    def interpolate(self, actions):
+        while True:
+            if rospy.is_shutdown():
+                break
+            try:
+                actions = self.interpolator.interpolate(actions, self.action_loader)
+                break
+            except UnknownSymbolError as e:
+                rospy.logerr(str(e))
+                self.say("Sorry, %s." % str(e))
+                valid = e.valid_commands
+                cmd = e.command
+                if "what" in str(e):
+                    q = "What is %s?" % cmd.arguments["object"]
+                    rospy.loginfo("q: %s" % q)
+                    answer = self.ask(q, grammar="gpsr")
+                    rospy.loginfo("a: %s" % answer)
+                    answer = "red small"  # FIXME
+                    db = UnknownObjectDatabase()
+                    db.add_object(cmd.arguments["object"], answer)
+                elif "where" in str(e):
+                    q = "Where should I do %s" % cmd.verb
+                    key = "location"
+                    rospy.loginfo("q: %s" % q)
+                    answer = self.ask(q, grammar="gpsr")
+                    rospy.loginfo("a: %s" % answer)
+                    answer = "living drawer"  # FIXME
+                    cmd.add_argument(key, answer)
+                # update actions
+                rospy.loginfo("valid: %s" % valid)
+                rospy.loginfo("cmd: %s" % cmd)
+                rospy.loginfo("commands: %s" % actions)
+                actions = valid + [cmd] + e.all_commands[1:]
+
+        return actions
+
+    def execute(self, userdata=None, query=None):
+        self.say("Hi!")
+        rospy.sleep(0.3)
+
+        if query is None:
+            query = self.listen_query()
+        if not query:
             return 'failed'
+        self.say("You said: %s" % query)
+        userdata.query = query
 
-        self.say("You said: %s" % answer)
-        userdata.query = answer
+        self.say("Let me see...", wait=False)
 
-        # TODO: recognize query
+        actions = self.recognize(query)
+        if not actions:
+            return 'failed'
+        rospy.loginfo("Parsed: %s" % actions)
+
+        actions = self.interpolate(actions)
+        if not actions:
+            return 'failed'
+        rospy.loginfo("Interpolated: %s" % actions)
+        userdata.actions = actions
 
         return 'succeeded'
 
 
 if __name__ == '__main__':
+    import sys
+    from smach import UserData
     from smach import StateMachine
 
     rospy.init_node("listen_command")
 
-    ac = ListenCommandAction()
+
+    APPID = '345e17f0-0f2e-453b-a8af-1a86975da87c'
+    APPKEY = 'bfececf25171466a97a61d600245f4ef'
+    if len(sys.argv) > 1:
+        query = ' '.join(sys.argv[1:])
+        ac = ListenCommandAction(app_id=APPID, app_key=APPKEY)
+        data = UserData()
+        result = ac.execute(userdata=data, query=query)
+        print "result:", result, "actions:", data.actions
+        sys.exit(0)
 
     sm = StateMachine(outcomes=['succeeded', 'failed'])
     with sm:
         StateMachine.add("listen_command", ac,
                          transitions={'succeeded': 'succeeded',
                                       'failed': 'failed'},
-                         remapping={'query': 'query'})
+                         remapping={'query': 'query',
+                                    'actions': 'actions'})
     result = sm.execute()
 
-    print "result:", result, "userdata.query:", sm.userdata.query
+    print "result:", result, "query:", sm.userdata.query
+    print "actions:", sm.userdata.actions

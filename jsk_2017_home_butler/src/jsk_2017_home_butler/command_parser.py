@@ -9,15 +9,14 @@ import warnings
 from jsk_2017_home_butler.action_loader import ActionLoader
 
 class CommandParser(object):
-    def __init__(self, app_id, app_key, endpoint=None):
-        if endpoint is None:
-            endpoint = "westus.api.cognitive.microsoft.com"
+    def __init__(self, app_id=None, app_key=None, endpoint=None):
         app_id = app_id or rospy.get_param("~app_id")
         app_key = app_key or rospy.get_param("~app_key")
+        endpoint = endpoint or "westus.api.cognitive.microsoft.com"
 
-        uri = "https://{endpoint}/luis/v2.0/apps/{app_id}?subscription-key={app_key}&verbose=true&q=".format(
+        url = "https://{endpoint}/luis/v2.0/apps/{app_id}?subscription-key={app_key}&verbose=true&q=".format(
             endpoint=endpoint, app_id=app_id, app_key=app_key)
-        self.luis = luis.Luis(url=uri)
+        self.luis = luis.Luis(url=url)
 
     def parse_command(self, text, ac_loader):
         assert isinstance(ac_loader, ActionLoader)
