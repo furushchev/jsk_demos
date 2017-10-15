@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<objects>
+  <object name="manju" defaultLocation="living drawer">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
+  <object name="mochi" defaultLocation="kitchen shelf">
+    <property type="color" value="white"/>
+    <property type="volume" value="small"/>
+  </object>
+  <object defaultLocation="kitchen table" name="apple">
+    <property type="volume" value="small"/>
+    <property type="primitive" value="circle"/>
+    <property type="color" value="red"/>
+  </object>
+  <object defaultLocation="" name="manju">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
+</objects>
