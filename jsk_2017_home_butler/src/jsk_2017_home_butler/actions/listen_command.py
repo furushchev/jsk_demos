@@ -9,6 +9,7 @@ from jsk_2017_home_butler.preprocessor import CommandPreprocessor
 from jsk_2017_home_butler.command_parser import CommandParser
 from jsk_2017_home_butler.interpolator import CommandInterpolator
 from jsk_2017_home_butler.interpolator import UnknownSymbolError
+from jsk_2017_home_butler.unknown_object_database import UnknownObjectDatabase
 from jsk_2017_home_butler.utils import SpeechMixin
 
 
@@ -65,22 +66,24 @@ class ListenCommandAction(State, SpeechMixin):
                 self.say("Sorry, %s." % str(e))
                 valid = e.valid_commands
                 cmd = e.command
-                if "what" in str(e):
-                    q = "What is %s?" % cmd.arguments["object"]
-                    rospy.loginfo("q: %s" % q)
-                    answer = self.ask(q, grammar="gpsr")
-                    rospy.loginfo("a: %s" % answer)
-                    answer = "red small"  # FIXME
-                    db = UnknownObjectDatabase()
-                    db.add_object(cmd.arguments["object"], answer)
-                elif "where" in str(e):
-                    q = "Where should I do %s" % cmd.verb
+                if "where" in str(e):
+                    q = "Where should I do %s" % cmd.name
                     key = "location"
                     rospy.loginfo("q: %s" % q)
                     answer = self.ask(q, grammar="gpsr")
                     rospy.loginfo("a: %s" % answer)
-                    answer = "living drawer"  # FIXME
+                    answer = "living drawer"  # FIXME: temp fix for testing
                     cmd.add_argument(key, answer)
+                elif "what" in str(e):
+                    q = "What is %s?" % cmd.arguments["object"]
+                    rospy.loginfo("q: %s" % q)
+                    answer = self.ask(q, grammar="gpsr")
+                    rospy.loginfo("a: %s" % answer)
+                    # TODO: ask location if not provided
+                    # TODO: need parse props for the object
+                    props = {"color": "red", "volume": "small"} # FIXME: temp fix for testing
+                    db = UnknownObjectDatabase()
+                    db.add_object(cmd.arguments["object"], props, cmd.arguments["location"])
                 # update actions
                 rospy.loginfo("valid: %s" % valid)
                 rospy.loginfo("cmd: %s" % cmd)
@@ -105,12 +108,12 @@ class ListenCommandAction(State, SpeechMixin):
         actions = self.recognize(query)
         if not actions:
             return 'failed'
-        rospy.loginfo("Parsed: %s" % actions)
+        rospy.loginfo("Parsed: %s" % [str(ac) for ac in actions])
 
         actions = self.interpolate(actions)
         if not actions:
             return 'failed'
-        rospy.loginfo("Interpolated: %s" % actions)
+        rospy.loginfo("Interpolated: %s" % [str(ac) for ac in actions])
         userdata.actions = actions
 
         return 'succeeded'

@@ -35,6 +35,8 @@ class CommandParser(object):
 
         tasks.sort(key=lambda x: x.start_index)
 
+        rospy.loginfo("Received %d tasks and %d entities" % (len(tasks), len(entities)))
+
         used_entities = []
         commands = []
         for task in tasks:

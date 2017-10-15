@@ -18,7 +18,7 @@ class ResourceLoader(object):
         if root_path is None:
             root_path = os.path.join(PKG_PATH, "data")
         if not os.path.isdir(root_path):
-            raise IOError("%s is not directory")
+            raise IOError("%s is not directory" % root_path)
         self.root_path = root_path
 
     def _load_names(self):

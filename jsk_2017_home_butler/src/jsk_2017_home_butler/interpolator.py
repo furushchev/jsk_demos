@@ -7,7 +7,7 @@ import rospy
 from jsk_2017_home_butler.action_loader import ActionLoader
 from jsk_2017_home_butler.resource_loader import ResourceLoader
 from jsk_2017_home_butler.classifier import WordClassifier
-from jsk_2017_home_butler.detection_interface import UnknownObjectDatabase
+from jsk_2017_home_butler.unknown_object_database import UnknownObjectDatabase
 
 
 class CommandInterpolateError(Exception):
@@ -58,12 +58,15 @@ class CommandInterpolator(object):
         if "object" not in cmd.arguments:
             return cmd
         obj = cmd.arguments["object"]
+        loc = cmd.arguments["location"]
         blacklist = ["it"]
         db = UnknownObjectDatabase()
-        if self.align and obj and obj not in blacklist and db.get_props(obj) is None:
+        if self.align and obj and obj not in blacklist and db.get_properties(obj, loc) is None:
             try:
                 inferred, confidence = self.obj_clf.infer(obj, with_proba=True)
-                if confidence > threshold:
+                if confidence >= 1.0:
+                    pass
+                elif 1.0 > confidence > threshold:
                     rospy.loginfo("Aligned object: %s -> %s (confidence: %.2f)" % (obj, inferred, confidence))
                     cmd.add_argument("object", inferred)
                 else:
@@ -82,11 +85,12 @@ class CommandInterpolator(object):
         if "location" not in cmd.arguments:
             return cmd
         loc = cmd.arguments["location"]
-        db = UnknownObjectDatabase()
-        if self.align and loc and loc != self.initial_state["location"] and db.get_props(loc) is None:
+        if self.align and loc and loc != self.initial_state["location"]:
             try:
                 inferred, confidence = self.loc_clf.infer(loc, with_proba=True)
-                if confidence > threshold:
+                if confidence >= 1.0:
+                    pass
+                elif confidence > threshold:
                     rospy.loginfo("Aligned location: %s -> %s (confidence: %.2f)" % (loc, inferred, confidence))
                     cmd.add_argument("location", inferred)
                 else:
@@ -101,7 +105,7 @@ class CommandInterpolator(object):
 
         return cmd
 
-    def interpolate(self, cmds, ac_loader, max_depth=10):
+    def interpolate(self, cmds, ac_loader, max_depth=20):
         assert isinstance(ac_loader, ActionLoader)
 
         new_cmds = []
@@ -119,28 +123,36 @@ class CommandInterpolator(object):
         cmds = new_cmds
 
         cmds = self.backtrack(cmds,
-                              copy.deepcopy(self.initial_state), [],
-                              0, max_depth)
+                              state=copy.deepcopy(self.initial_state),
+                              valid=[],
+                              depth=0,
+                              max_depth=max_depth,
+                              ac_loader=ac_loader)
         return cmds
 
 
-    def backtrack(self, cmds, state, valid, depth, max_depth):
+    def backtrack(self, cmds, state, valid, depth, max_depth, ac_loader):
         if depth >= max_depth:
             raise OverflowError("search depth exceeds maximum: %d >= %d" % (depth, max_depth))
         if not cmds:
             return valid
         cmd = cmds[0]
-        print "cmd:", cmd.name, "args:", cmd.arguments
 
         # align
         cmd = self.align_object(cmd, valid, cmds, state)
         cmd = self.align_location(cmd, valid, cmds, state)
 
+        rospy.loginfo(">> %d: [%s] %s" % (depth, cmd.type, str(cmd)))
+        rospy.loginfo("       %s" % state)
+
         # align 'it'
         if "object" in cmd.arguments:
             obj = cmd.arguments["object"]
-            if obj.strip().lower() == 'it' and state["on_hand"]:
-                cmd.add_argument("object", state["on_hand"])
+            if obj.strip().lower() == 'it':
+                if state["on_hand"]:
+                    cmd.add_argument("object", state["on_hand"])
+                elif state["near_object"]:
+                    cmd.add_argument("object", state["near_object"])
 
         if cmd.type == 'go':
             if not cmd.arguments["location"]:
@@ -163,7 +175,7 @@ class CommandInterpolator(object):
                 if state["location"] != cmd.arguments["location"]:
                     gocmd = ac_loader.gen_action("go")
                     gocmd.add_argument("location", cmd.arguments["location"])
-                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
             else:
                 cmd.add_argument("location", state["location"])
         elif cmd.type == 'findobj':
@@ -174,7 +186,7 @@ class CommandInterpolator(object):
                 if state["location"] != cmd.arguments["location"]:
                     gocmd = ac_loader.gen_action("go")
                     gocmd.add_argument("location", cmd.arguments["location"])
-                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
             else:
                 # check default location. if exists, go to default location
                 # otherwise find at current position.
@@ -184,7 +196,7 @@ class CommandInterpolator(object):
                     if state["location"] != loc:
                         gocmd = ac_loader.gen_action("go")
                         gocmd.add_argument("location", obj_locs[cmd.arguments["object"]])
-                        return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                        return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
                     else:
                         cmd.add_argument("location", state["location"])
                 else:
@@ -198,26 +210,39 @@ class CommandInterpolator(object):
                 if state["location"] != cmd.arguments["location"]:
                     gocmd = ac_loader.gen_action("go")
                     gocmd.add_argument("location", cmd.arguments["location"])
-                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
             else:
                 cmd.add_argument("location", state["location"])
             state.update({"near_person": cmd.arguments["person"] or "someone"})
         elif cmd.type == 'pick':
+            # assert the object to pick
+            if cmd.arguments["object"] == state["near_object"]:
+                if not cmd.arguments["location"]:
+                    cmd.add_argument("location", state["location"])
+            elif not cmd.arguments["object"]:
+                if state["near_object"]:
+                    cmd.add_argument("object", state["near_object"])
+                else:
+                    raise CommandInterpolateError("I could not know an object to pick",
+                                                  cmd, valid, cmds, state)
+
+            # consider about location
             if cmd.arguments["location"]:
                 if state["location"] != cmd.arguments["location"]:
                     gocmd = ac_loader.gen_action("go")
                     gocmd.add_argument("location", cmd.arguments["location"])
-                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
             else:
                 # check default location. if exists, go to default location
                 # otherwise find at current position.
                 obj_locs = {e["name"]: e["defaultLocation"] for e in self.resource.objects}
+
                 if cmd.arguments["object"] in obj_locs:
                     loc = obj_locs[cmd.arguments["object"]]
                     if state["location"] != loc:
                         gocmd = ac_loader.gen_action("go")
                         gocmd.add_argument("location", obj_locs[cmd.arguments["object"]])
-                        return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                        return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
                     else:
                         cmd.add_argument("location", state["location"])
                 else:
@@ -225,12 +250,7 @@ class CommandInterpolator(object):
                     raise CommandInterpolateError(
                         "I could not know where %s is located." % cmd.arguments["object"],
                         cmd, valid, cmds, state)
-            if not cmd.arguments["object"] or cmd.arguments["object"] == "it":
-                if state["near_object"]:
-                    cmd.add_argument("object", state["near_object"])
-                else:
-                    raise CommandInterpolateError("I could not know an object to pick",
-                                                  cmd, valid, cmds, state)
+
             state.update({"on_hand": cmd.arguments["object"],
                           "near_object": None})
         elif cmd.type == 'place':
@@ -238,7 +258,7 @@ class CommandInterpolator(object):
                 if state["location"] != cmd.arguments["location"]:
                     gocmd = ac_loader.gen_action("go")
                     gocmd.add_argument("location", cmd.arguments["location"])
-                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
             else:
                 cmd.add_argument("location", state["location"])
             if not cmd.arguments["object"] or cmd.arguments["object"] == "it":
@@ -250,6 +270,16 @@ class CommandInterpolator(object):
             state.update({"on_hand": None,
                           "near_object": cmd.arguments["object"]})
         elif cmd.type == 'deliver':
+            # consider about object first
+            if not state["on_hand"]:
+                if not cmd.arguments["object"]:
+                    raise CommandInterpolateError("I could not know an object to deliver",
+                                                  cmd, valid, cmds, state)
+                pickcmd = ac_loader.gen_action("pick")
+                pickcmd.add_argument("object", cmd.arguments["object"])
+                return self.backtrack([pickcmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
+
+            # consider about person to deliver?
             if not cmd.arguments["person"]:
                 if state["near_person"]:
                     cmd.add_argument("person", state["near_person"])
@@ -260,20 +290,20 @@ class CommandInterpolator(object):
                   state["location"] != self.initial_state["location"]):
                 gocmd = ac_loader.gen_action("go")
                 gocmd.add_argument("location", "operatorfront")
-                return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
-            if not state["on_hand"]:
-                if not cmd.arguments["object"]:
-                    raise CommandInterpolateError("I could not know an object to deliver",
-                                                  cmd, valid, cmds, state)
-                pickcmd = ac_loader.gen_action("pick")
-                pickcmd.add_argument("object", cmd.arguments["object"])
-                return self.backtrack([pickcmd] + cmds, state, valid, depth+1, max_depth)
-            elif cmd.arguments["location"]:
+                return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
+            # if not state["on_hand"]:
+            #     if not cmd.arguments["object"]:
+            #         raise CommandInterpolateError("I could not know an object to deliver",
+            #                                       cmd, valid, cmds, state)
+            #     pickcmd = ac_loader.gen_action("pick")
+            #     pickcmd.add_argument("object", cmd.arguments["object"])
+            #     return self.backtrack([pickcmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
+            if cmd.arguments["location"]:
                 if state["location"] != cmd.arguments["location"]:
                     # what does location means? the location of the person or the object?
                     gocmd = ac_loader.gen_action("go")
                     gocmd.add_argument("location", cmd.arguments["location"])
-                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth)
+                    return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
             else:
                 cmd.add_argument("location", state["location"])
             state.update({"on_hand": None,
@@ -283,8 +313,10 @@ class CommandInterpolator(object):
                 if state["near_person"]:
                     cmd.add_argument("person", state["near_person"])
 
-        print "state:", state
-        return self.backtrack(cmds[1:], state, valid + [cmd], depth+1, max_depth)
+        rospy.loginfo("<< %d: [%s] %s" % (depth, cmd.type, str(cmd)))
+        rospy.loginfo("       %s" % state)
+
+        return self.backtrack(cmds[1:], state, valid + [cmd], depth+1, max_depth, ac_loader)
 
 
 if __name__ == '__main__':
