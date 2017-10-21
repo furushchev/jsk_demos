@@ -1,26 +1,29 @@
 #!/usr/bin/env roseus
-;; pick.l
+;; findobj.l
 ;; Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
+
 
 (ros::load-ros-manifest "jsk_2017_home_butler")
 (require :pr2-interface "package://pr2eus/pr2-interface.l")
 
-(defun pick-action-cb (server goal)
+(defun find-object-action-cb (server goal)
   (let ((res (send server :result)))
+    (ros::ros-info "find-object")
     (send server :set-succeeded res)))
 
 ;; main
-(ros::roseus "pick_server")
+(ros::roseus "find_object_server")
 
 (setq *server*
       (instance ros::simple-action-server :init
-                "/pick"
-                jsk_2017_home_butler::PickAction
-                :execute-cb #'pick-action-cb))
+                "/find_object"
+                jsk_2017_home_butler::FindObjectAction
+                :execute-cb #'find-object-action-cb))
 (ros::rate 10)
 (while
  (ros::ok)
  (send *server* :worker)
  (ros::spin-once)
  (ros::sleep))
+
 

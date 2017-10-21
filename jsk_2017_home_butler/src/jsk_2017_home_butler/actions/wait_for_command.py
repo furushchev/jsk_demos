@@ -12,7 +12,7 @@ class WaitForCommandAction(State):
                        outcomes=['succeeded', 'failed'])
 
     def execute(self, userdata=None):
-        rospy.sleep(20)  # FIXME: implement active attention estimation
+        rospy.sleep(3)  # FIXME: implement active attention estimation
         return 'succeeded'
 
 

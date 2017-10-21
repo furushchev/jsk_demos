@@ -12,11 +12,11 @@ action_definitions:
     name: [speak, speech, answer, tell, say]
     arguments: [content, person, location]
     format: '{name} {content} to {person} at {location}'
-  - type: findobj
+  - type: find_object
     name: [find, look for, locate]
     arguments: [location, object, question]
     format: '{name} {object}{question} at {location}'
-  - type: findppl
+  - type: find_person
     name: [find, look for]
     arguments: [location, person, question]
     format: '{name} {person}{question} at {location}'

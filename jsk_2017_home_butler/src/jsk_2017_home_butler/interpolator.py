@@ -178,7 +178,7 @@ class CommandInterpolator(object):
                     return self.backtrack([gocmd] + cmds, state, valid, depth+1, max_depth, ac_loader)
             else:
                 cmd.add_argument("location", state["location"])
-        elif cmd.type == 'findobj':
+        elif cmd.type == 'find_object':
             if not cmd.arguments["object"] and not cmd.arguments["question"]:
                 raise CommandInterpolateError("I could not know an object to find",
                                               cmd, valid, cmds, state)
@@ -202,7 +202,7 @@ class CommandInterpolator(object):
                 else:
                     cmd.add_argument("location", state["location"])
             state.update({"near_object": cmd.arguments["object"]})
-        elif cmd.type == 'findppl':
+        elif cmd.type == 'find_person':
             if not cmd.arguments["person"] and not cmd.arguments["question"]:
                 raise CommandInterpolateError("I could not know a person to find or order",
                                               cmd, valid, cmds, state)
@@ -325,9 +325,10 @@ if __name__ == '__main__':
 
     ac_loader = ActionLoader()
 
-    APPID = '345e17f0-0f2e-453b-a8af-1a86975da87c'
-    APPKEY = 'bfececf25171466a97a61d600245f4ef'
-    parser = CommandParser(APPID, APPKEY)
+    rospy.set_param("~app_id", '48a5ef97-c9c5-4986-85c7-f6f5ef6f4bbc')
+    rospy.set_param("~app_key", 'bfececf25171466a97a61d600245f4ef')
+
+    parser = CommandParser()
     interp = CommandInterpolator()
 
     def interpolate(query):

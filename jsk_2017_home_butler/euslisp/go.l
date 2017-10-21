@@ -6,9 +6,10 @@
 (require :pr2-interface "package://pr2eus/pr2-interface.l")
 (require :eng2-scene "package://jsk_maps/src/eng2-scene.l")
 
-(defun goto-action-cb (server goal)
+(defun go-action-cb (server goal)
   (let ((res (send server :result))
-        (spot (send goal :goal :destination)))
+        (spot (send goal :goal :location)))
+    (ros::ros-info "spot: ~A" spot)
     (when (or
            (null spot)
            (string= "" spot)
@@ -20,18 +21,20 @@
     (send *ri* :move-to (send *scene* :spot spot))
     (send server :set-succeeded res)))
 
-(defun main ()
-  (ros::roseus "deliver_server")
+;; main
+(ros::roseus "go_server")
 
-  (pr2-init)
-  (send *scene* (make-eng2-scene))
+(pr2-init)
+(setq *scene* (make-eng2-scene))
 
-  (let ((server (instance ros::simple-action-server :init
-                          "/goto"
-                          jsk_2017_home_butler::GoToAction
-                          :execute-cb #'goto-action-cb)))
-    (ros::rate 10)
-  (while (ros::ok)
-    (send server :worker)
-    (ros::spin-once)
-    (ros::sleep))))
+(setq *server*
+      (instance ros::simple-action-server :init
+                "/go"
+                jsk_2017_home_butler::GoAction
+                :execute-cb #'go-action-cb)))
+(ros::rate 10)
+(while
+ (ros::ok)
+ (send *server* :worker)
+ (ros::spin-once)
+ (ros::sleep))

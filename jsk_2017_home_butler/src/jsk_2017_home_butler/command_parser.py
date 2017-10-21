@@ -60,7 +60,7 @@ class CommandParser(object):
 if __name__ == '__main__':
     ac_loader = ActionLoader()
 
-    APPID = '345e17f0-0f2e-453b-a8af-1a86975da87c'
+    APPID = '48a5ef97-c9c5-4986-85c7-f6f5ef6f4bbc'
     APPKEY = 'bfececf25171466a97a61d600245f4ef'
     parser = CommandParser(APPID, APPKEY)
     query = "Could you please answer a question, look for Ethan in the corridor, and follow him."

@@ -16,7 +16,7 @@ def snake_to_camel(text):
 
 
 def camel_to_snake(text):
-    return re.sub('([A-Z])', lambda s: '_' + s.group(1).lower(), text)
+    return (text[0] + re.sub('([A-Z])', lambda s: '_' + s.group(1), text[1:])).lower()
 
 
 _ACTION_CLIENTS = {}

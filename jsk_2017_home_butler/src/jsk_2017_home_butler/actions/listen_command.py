@@ -24,7 +24,7 @@ class ListenCommandAction(State, SpeechMixin):
 
         State.__init__(self,
                        outcomes=['succeeded', 'failed'],
-                       output_keys=['query'])
+                       output_keys=['query', 'actions'])
 
     def listen_query(self):
         for i in range(3):
@@ -126,12 +126,12 @@ if __name__ == '__main__':
 
     rospy.init_node("listen_command")
 
+    rospy.set_param("~app_id", '48a5ef97-c9c5-4986-85c7-f6f5ef6f4bbc')
+    rospy.set_param("~app_key", 'bfececf25171466a97a61d600245f4ef')
 
-    APPID = '345e17f0-0f2e-453b-a8af-1a86975da87c'
-    APPKEY = 'bfececf25171466a97a61d600245f4ef'
     if len(sys.argv) > 1:
         query = ' '.join(sys.argv[1:])
-        ac = ListenCommandAction(app_id=APPID, app_key=APPKEY)
+        ac = ListenCommandAction()
         data = UserData()
         result = ac.execute(userdata=data, query=query)
         print "result:", result, "actions:", data.actions

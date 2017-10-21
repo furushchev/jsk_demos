@@ -10,15 +10,17 @@
   (let ((res (send server :result)))
     (send server :set-succeeded res)))
 
-(defun main ()
-  (ros::roseus "deliver_server")
+;; main
+(ros::roseus "deliver_server")
 
-  (let ((server (instance ros::simple-action-server :init
-                          "/deliver"
-                          jsk_2017_home_butler::DeliverAction
-                          :execute-cb #'deliver-action-cb)))
-    (ros::rate 10)
-  (while (ros::ok)
-    (send server :worker)
-    (ros::spin-once)
-    (ros::sleep))))
+(setq *server*
+      (instance ros::simple-action-server :init
+                "/deliver"
+                jsk_2017_home_butler::DeliverAction
+                :execute-cb #'deliver-action-cb))
+(ros::rate 10)
+(while
+ (ros::ok)
+ (send *server* :worker)
+ (ros::spin-once)
+ (ros::sleep))

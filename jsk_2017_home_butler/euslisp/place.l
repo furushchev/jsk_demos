@@ -9,15 +9,17 @@
   (let ((res (send server :result)))
     (send server :set-succeeded res)))
 
-(defun main ()
-  (ros::roseus "place_server")
+;; main
+(ros::roseus "place_server")
 
-  (let ((server (instance ros::simple-action-server :init
-                          "/place"
-                          jsk_2017_home_butler::PlaceAction
-                          :execute-cb #'place-action-cb)))
-    (ros::rate 10)
-  (while (ros::ok)
-    (send server :worker)
-    (ros::spin-once)
-    (ros::sleep))))
+(setq *server*
+      (instance ros::simple-action-server :init
+                "/place"
+                jsk_2017_home_butler::PlaceAction
+                :execute-cb #'place-action-cb))
+(ros::rate 10)
+(while
+ (ros::ok)
+ (send *server* :worker)
+ (ros::spin-once)
+ (ros::sleep))

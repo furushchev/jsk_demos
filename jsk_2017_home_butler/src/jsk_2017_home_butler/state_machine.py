@@ -2,32 +2,55 @@
 # -*- coding: utf-8 -*-
 # Author: Furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
+from actionlib_msgs.msg import GoalStatus
 import re
 import rospy
 from smach import StateMachine
 from smach_ros import SimpleActionState
 
 from jsk_2017_home_butler.utils import camel_to_snake
+from jsk_2017_home_butler.actions import PRIMITIVE_ACTIONS
 from jsk_2017_home_butler.actions import ListenCommandAction
 from jsk_2017_home_butler.actions import WaitForCommandAction
+from jsk_2017_home_butler.actions import RunCommandAction
+from jsk_2017_home_butler.actions import RecoverAction
 
 from jsk_2017_home_butler.msg import AnswerQuestionAction
 from jsk_2017_home_butler.msg import FindObjectAction
 from jsk_2017_home_butler.msg import FindPersonAction
 from jsk_2017_home_butler.msg import DeliverAction
-from jsk_2017_home_butler.msg import GoToAction
-from jsk_2017_home_butler.msg import PickObjectAction
-from jsk_2017_home_butler.msg import PlaceObjectAction
+from jsk_2017_home_butler.msg import GoAction
+from jsk_2017_home_butler.msg import PickAction
+from jsk_2017_home_butler.msg import PlaceAction
 from jsk_2017_home_butler.msg import SpeakAction
 
 
 def hoge():
+    def goal_cb(ud, goal):
+        rospy.logwarn("GOAL: %s" % type(goal))
+        return goal
+
+    def result_cb(userdata, status, result):
+        rospy.logwarn("UD: %s, ST: %s, res: %s" % (userdata, status, result))
+        if status == GoalStatus.SUCCEEDED:
+            rospy.logwarn("SUCCEEDED!")
+            slots = result.__slots__
+            for ex in ["header", "status"]:
+                if ex in slots:
+                    slots.remove(ex)
+            userdata.result = {k: getattr(result, k) for k in slots}
+        rospy.logwarn("RESULT: %s" % userdata.result)
+
     from actionlib_tutorials.msg import FibonacciAction
     StateMachine.add(
         'fib',
         SimpleActionState('fibonacci', FibonacciAction,
+                          goal_cb=goal_cb,
+                          result_cb=result_cb,
                           goal_slots=['order'],
-                          result_slots=['sequence']),
+                          result_slots=['sequence'],
+                          input_keys=['result'],
+                          output_keys=['result']),
         transitions={'succeeded': 'succeeded',
                      'aborted': 'failed',
                      'preempted': 'failed'},
@@ -41,56 +64,90 @@ def test_smach():
     return sm
 
 def make_action(name, spec,
-                succeeded='succeeded', failed='failed',
-                goal={}, result={}):
-    remapping = goal.copy()
-    remapping.update(result)
+                succeeded='succeeded', failed='failed'):
+
+    def goal_cb(userdata, goal):
+        assert isinstance(userdata.arguments, dict)
+        for k, v in userdata.arguments.items():
+            assert hasattr(goal, k)
+            setattr(goal, k, v)
+        return goal
+
+    def result_cb(userdata, status, result):
+        if status == GoalStatus.SUCCEEDED:
+            slots = result.__slots__
+            for ex in ["header", "status"]:
+                if ex in slots:
+                    slots.remove(ex)
+            userdata.result = {k: getattr(result, k) for k in slots}
+
     StateMachine.add(
         name,
         SimpleActionState(camel_to_snake(name), spec,
-                          goal_slots=goal.keys(),
-                          result_slots=result.keys()),
+                          goal_cb=goal_cb,
+                          result_cb=result_cb,
+                          input_keys=['arguments', 'result'],
+                          output_keys=['result']),
         transitions={'succeeded': succeeded,
                      'aborted': failed,
-                     'preempted': failed},
-        remapping=remapping)
+                     'preempted': failed})
 
 def make_state_machine():
     sm = StateMachine(['succeeded', 'failed'])
     with sm:
-        StateMachine.add('WaitForCommand', WaitForCommandAction,
+        StateMachine.add('WaitForCommand', WaitForCommandAction(),
                          transitions={'succeeded': 'ListenCommand',
                                       'failed': 'WaitForCommand'})
+
         StateMachine.add('ListenCommand',
-                         ListenCommandAction,
+                         ListenCommandAction(),
                          transitions={'succeeded': 'RunCommand',
-                                      'failed': 'WaitForCommand'},
-                         remapping={'query': 'query',
-                                    'commands': 'commands'})
-        # TODO: run_command
-        # TODO: recover
-        make_action('find_person', FindPersonAction,
-                    succeeded='run_command', failed='recover')
-        make_action('speak', SpeakAction,
-                    succeeded='run_command', failed='recover')
-        make_action('go_to', GoToAction,
-                    succeeded='run_command', failed='recover')
-        make_action('find_object', FindObjectAction,
-                    succeeded='run_command', failed='recover')
-        make_action('answer_question', AnswerQuestionAction,
-                    succeeded='run_command', failed='recover')
-        make_action('pick_object', PickObjectAction,
-                    succeeded='run_command', failed='recover')
-        make_action('place_object', PlaceObjectAction,
-                    succeeded='run_command', failed='recover')
-        make_action('deliver', DeliverAction,
-                    succeeded='run_command', failed='recover')
+                                      'failed': 'WaitForCommand'})
+                         # remapping={'query': 'query',
+                         #            'actions': 'actions'})
+
+        transitions = {'succeeded': 'succeeded'}
+        for ac in PRIMITIVE_ACTIONS:
+            transitions.update({ac: ac})
+        StateMachine.add('RunCommand',
+                         RunCommandAction(),
+                         transitions=transitions)
+
+        StateMachine.add('Recover',
+                         RecoverAction(),
+                         transitions={'succeeded': 'succeeded'})
+
+        # action primitives
+        make_action('FindPerson', FindPersonAction,
+                    succeeded='RunCommand', failed='Recover')
+        make_action('Speak', SpeakAction,
+                    succeeded='RunCommand', failed='Recover')
+        make_action('Go', GoAction,
+                    succeeded='RunCommand', failed='Recover')
+        make_action('FindObject', FindObjectAction,
+                    succeeded='RunCommand', failed='Recover')
+        make_action('AnswerQuestion', AnswerQuestionAction,
+                    succeeded='RunCommand', failed='Recover')
+        make_action('Pick', PickAction,
+                    succeeded='RunCommand', failed='Recover')
+        make_action('Place', PlaceAction,
+                    succeeded='RunCommand', failed='Recover')
+        make_action('Deliver', DeliverAction,
+                    succeeded='RunCommand', failed='Recover')
+
+    return sm
+
 
 def main():
     from smach_ros import IntrospectionServer
 
     rospy.init_node("state_machine")
-    sm = test_smach()
+
+    rospy.set_param("~app_id", '48a5ef97-c9c5-4986-85c7-f6f5ef6f4bbc')
+    rospy.set_param("~app_key", 'bfececf25171466a97a61d600245f4ef')
+
+    # sm = test_smach()
+    sm = make_state_machine()
     sm.userdata.hoge = 10
     insp = IntrospectionServer('server_name', sm, '/SM_ROOT')
     insp.start()

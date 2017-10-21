@@ -19,10 +19,10 @@ add_service_files()
 add_action_files(FILES
   AnswerQuestion.action
   FindPerson.action
-  PickObject.action
+  Pick.action
   Deliver.action
-  GoTo.action
-  PlaceObject.action
+  Go.action
+  Place.action
   FindObject.action
   Speak.action
 )
