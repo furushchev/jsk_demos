@@ -24,7 +24,6 @@ add_action_files(FILES
   GoTo.action
   PlaceObject.action
   FindObject.action
-  ListenCommand.action
   Speak.action
 )
 
