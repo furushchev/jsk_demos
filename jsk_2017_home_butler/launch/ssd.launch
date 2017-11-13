@@ -1,0 +1,51 @@
+<launch>
+  <arg name="use_throttle" default="true" />
+  <arg name="respawn" default="true" />
+  <arg name="use_voc" default="false" />
+
+  <arg name="camera" default="kinect_head" />
+  <arg name="throttle_prefix"     if="$(arg use_throttle)" default="throttled/" />
+  <arg name="throttle_prefix" unless="$(arg use_throttle)" default="" />
+
+  <arg name="input_image" default="/$(arg camera)/rgb/$(arg throttle_prefix)image_rect_color" />
+  <arg name="input_camera_info" default="/$(arg camera)/rgb/$(arg throttle_prefix)camera_info" />
+  <arg name="input_depth" default="/$(arg camera)/depth_registered/$(arg throttle_prefix)image_rect" />
+
+  <arg name="model_path" default="voc0712" if="$(arg use_voc)" />
+  <arg name="label_names" default="[]"      if="$(arg use_voc)" />
+
+  <arg name="model_path" default="/etc/ros/jsk_data/gpsr/model" unless="$(arg use_voc)" />
+  <arg name="label_names" default="/etc/ros/jsk_data/gpsr/class.yaml"   unless="$(arg use_voc)" />
+
+  <arg name="gpu" default="0" />
+  <arg name="machine" default="external" />
+
+  <include file="$(find jsk_2017_home_butler)/pr2.machine" />
+
+  <group ns="ssd">
+    <node name="ssd_object_detector"
+          pkg="jsk_perception" type="ssd_object_detector.py"
+          output="screen" machine="$(arg machine)">
+      <remap from="~input" to="$(arg input_image)" />
+      <rosparam subst_value="true">
+        gpu: $(arg gpu)
+        score_thresh: 0.4
+        model_path: $(arg model_path)
+        label_names: $(arg label_names)
+      </rosparam>
+    </node>
+
+    <node name="bounding_box_pose" pkg="jsk_2017_home_butler" type="rect_array_to_pose_array.py"
+          respawn="$(arg respawn)" output="screen"
+          machine="$(arg machine)">
+      <remap from="~input" to="ssd_object_detector/output/rect" />
+      <remap from="~input/depth" to="$(arg input_depth)"/>
+      <remap from="~input/camera_info" to="$(arg input_camera_info)" />
+      <rosparam>
+        approximate_sync: true
+        queue_size: 10
+        slop: 0.1
+      </rosparam>
+    </node>
+  </group>
+</launch>

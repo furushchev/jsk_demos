@@ -5,6 +5,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   message_generation
   std_msgs
+  dynamic_reconfigure
 )
 
 catkin_python_setup()
@@ -35,10 +36,9 @@ generate_messages(
 )
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
-# generate_dynamic_reconfigure_options(
-#   cfg/DynReconf1.cfg
-#   cfg/DynReconf2.cfg
-# )
+generate_dynamic_reconfigure_options(
+  cfg/VolumeClassifier.cfg
+)
 
-catkin_package()
+Catkin_package(CATKIN_DEPENDS dynamic_reconfigure)
 

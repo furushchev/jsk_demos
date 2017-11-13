@@ -1,0 +1,10 @@
+<launch>
+  <arg name="use_ssd" default="true" />
+  <arg name="use_tabletop" default="true" />
+
+  <include file="$(find jsk_2017_home_butler)/launch/ssd.launch"
+           if="$(arg use_ssd)" />
+
+  <include file="$(find jsk_2017_home_butler)/launch/tabletop.launch"
+           if="$(arg use_tabletop)" />
+</launch>
