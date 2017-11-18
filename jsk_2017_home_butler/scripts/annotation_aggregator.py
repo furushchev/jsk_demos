@@ -126,7 +126,6 @@ class AnnotationAggregator(ConnectionBasedTransport):
         now = rospy.Time.now()
         for i, e in enumerate(self.cache):
             t = e[0]
-            rospy.loginfo("diff: %f" % (now - t).to_sec())
             if (now - t).to_sec() > self.cache_duration:
                 rospy.loginfo("Clear %d caches" % (len(self.cache)-i))
                 self.cache = self.cache[:i]
