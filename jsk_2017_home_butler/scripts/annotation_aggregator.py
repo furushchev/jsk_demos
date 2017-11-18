@@ -121,18 +121,21 @@ class AnnotationAggregator(ConnectionBasedTransport):
         self.cache.append((stamp, new_pose, new_clss))
 
     def publish(self):
-        if len(self.cache) == 0:
-            return
-
         # cleanup old cache
-        self.cache.sort(key=lambda x: x[0])
+        self.cache.sort(key=lambda x: x[0], reverse=True)
         now = rospy.Time.now()
         for i, e in enumerate(self.cache):
             t = e[0]
-            if now - t < rospy.Duration(self.cache_duration):
-                self.cache = self.cache[i:]
-                rospy.loginfo("Cleared %d cache" % i)
+            rospy.loginfo("diff: %f" % (now - t).to_sec())
+            if (now - t).to_sec() > self.cache_duration:
+                rospy.loginfo("Clear %d caches" % (len(self.cache)-i))
+                self.cache = self.cache[:i]
                 break
+        self.cache.reverse()
+
+        if len(self.cache) == 0:
+            return
+
         stamp = self.cache[-1][0]
         rospy.loginfo("cached stamp: %.3f - %.3f" % ((now-self.cache[0][0]).to_sec(), (now-stamp).to_sec()))
         result = ClassificationResult()
