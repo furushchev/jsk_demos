@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # Author: Yuki Furuta <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
+import copy
 import math
 import rospy
 import tf2_ros
@@ -21,6 +22,13 @@ def distance(p1, p2):
     return math.sqrt(d)
 
 
+def strip_frame(frame):
+    if frame.startswith("/"):
+        return frame[1:]
+    else:
+        return frame
+
+
 class AnnotationAggregator(ConnectionBasedTransport):
     def __init__(self):
         super(AnnotationAggregator, self).__init__()
@@ -30,8 +38,8 @@ class AnnotationAggregator(ConnectionBasedTransport):
         self.pose_tolerance = rospy.get_param("~pose_tolerance", 0.03)
         self.slop = rospy.get_param("~slop", 0.1)
         self.cache_duration = rospy.get_param("~cache_duration", 10.0)
-        self.fixed_frame_id = rospy.get_param("~fixed_frame_id",
-                                              "head_rgbd_sensor_rgb_frame")
+        self.fixed_frame_id = strip_frame(
+            rospy.get_param("~fixed_frame_id", "head_rgbd_sensor_rgb_frame"))
 
         self.tfl = tf2_ros.BufferClient("/tf2_buffer_server")
         if not self.tfl.wait_for_server(rospy.Duration(10)):
@@ -48,29 +56,48 @@ class AnnotationAggregator(ConnectionBasedTransport):
             "~output/boxes", BoundingBoxArray, queue_size=1)
 
     def subscribe(self):
-        self.sub_pose = [
-            MF.Subscriber("~input/pose/class", ClassificationResult, queue_size=1),
-            MF.Subscriber("~input/pose/pose", PoseArray, queue_size=1),
-        ]
-        self.sub_box = [
-            MF.Subscriber("~input/box/class", ClassificationResult, queue_size=1),
-            MF.Subscriber("~input/box/box", BoundingBoxArray, queue_size=1),
-        ]
-        if self.approximate_sync:
-            sync_pose = MF.ApproximateTimeSynchronizer(
-                self.sub_pose, queue_size=self.queue_size, slop=self.slop)
-            sync_box = MF.ApproximateTimeSynchronizer(
-                self.sub_box, queue_size=self.queue_size, slop=self.slop)
-        else:
-            sync_pose = MF.TimeSynchronizer(
-                self.sub_pose, queue_size=self.queue_size)
-            sync_box = MF.TimeSynchronizer(
-                self.sub_box, queue_size=self.queue_size)
-        sync_pose.registerCallback(self.callback_pose)
-        sync_box.registerCallback(self.callback_box)
+        pose_num = rospy.get_param("~pose_annotators_num", 0)
+        bbox_num = rospy.get_param("~bbox_annotators_num", 0)
+
+        self.subscribers = list()
+        self.synchronizers = list()
+
+        # pose based annotators
+        sub_pose = MF.Subscriber("~input/pose/pose", PoseArray, queue_size=1)
+        self.subscribers.append(sub_pose)
+        for i in range(pose_num):
+            sub_cls = MF.Subscriber(
+                "~input/pose/class{}".format(i), ClassificationResult, queue_size=1)
+            if self.approximate_sync:
+                sync = MF.ApproximateTimeSynchronizer(
+                    [sub_pose, sub_cls], queue_size=self.queue_size, slop=self.slop)
+            else:
+                sync = MF.TimeSynchronizer(
+                    [sub_pose, sub_cls], queue_size=self.queue_size)
+            sync.registerCallback(self.callback_pose)
+            self.subscribers.append(sub_cls)
+            self.synchronizers.append(sync)
+
+        # bbox based annotators
+        sub_bbox = MF.Subscriber("~input/bbox/bbox", BoundingBoxArray, queue_size=1)
+        self.subscribers.append(sub_bbox)
+        for i in range(bbox_num):
+            sub_cls = MF.Subscriber(
+                "~input/bbox/class{}".format(i), ClassificationResult, queue_size=1)
+            if self.approximate_sync:
+                sync = MF.ApproximateTimeSynchronizer(
+                    [sub_bbox, sub_cls], queue_size=self.queue_size, slop=self.slop)
+            else:
+                sync = MF.TimeSynchronizer(
+                    [sub_bbox, sub_cls], queue_size=self.queue_size)
+            sync.registerCallback(self.callback_bbox)
+            self.subscribers.append(sub_cls)
+            self.synchronizers.append(sync)
+
+        rospy.loginfo("Subscribed %d pose annotators / %d bbox annotators" % (pose_num, bbox_num))
 
     def unsubscribe(self):
-        for s in self.sub_pose + self.sub_box:
+        for s in self.subscribers:
             s.unregister()
 
     def update_cache(self, stamp, new_pose, new_cls, new_clf):
@@ -92,7 +119,6 @@ class AnnotationAggregator(ConnectionBasedTransport):
 
         self.cache = [e for i, e in enumerate(self.cache) if i not in dups]
         self.cache.append((stamp, new_pose, new_clss))
-        return
 
     def publish(self):
         if len(self.cache) == 0:
@@ -137,17 +163,21 @@ class AnnotationAggregator(ConnectionBasedTransport):
         self.pub_pose.publish(poses)
         self.pub_boxes.publish(boxes)
 
-    def callback_pose(self, cls, poses):
+    def callback_pose(self, poses, cls):
+        poses = copy.deepcopy(poses)
         rospy.loginfo("callback pose: %s %s" % (cls.header.stamp, cls.classifier))
 
         if len(cls.label_names) != len(poses.poses):
             rospy.logwarn("len(cls.label_names) != len(poses.poses)")
             return
 
-        if poses.header.frame_id != self.fixed_frame_id:
+        frame_id = strip_frame(poses.header.frame_id)
+        if frame_id != self.fixed_frame_id:
             for i, p in enumerate(poses.poses):
                 try:
-                    ps = PoseStamped(header=poses.header, pose=p)
+                    ps = PoseStamped(pose=p)
+                    ps.header.frame_id = frame_id
+                    ps.header.stamp = poses.header.stamp
                     ps = self.tfl.transform(ps, self.fixed_frame_id)
                     poses.poses[i] = ps.pose
                 except Exception as e:
@@ -158,17 +188,21 @@ class AnnotationAggregator(ConnectionBasedTransport):
             self.update_cache(cls.header.stamp, p, c, cls.classifier)
         self.publish()
 
-    def callback_box(self, cls, boxes):
+    def callback_bbox(self, boxes, cls):
+        boxes = copy.deepcopy(boxes)
         rospy.loginfo("callback boxes: %s %s" % (cls.header.stamp, cls.classifier))
 
         if len(cls.label_names) != len(boxes.boxes):
             rospy.logwarn("len(cls.label_names) != len(boxes.boxes)")
             return
 
-        if boxes.header.frame_id != self.fixed_frame_id:
-            for i, b in enumerate(boxes.boxes):
+        for i, b in enumerate(boxes.boxes):
+            frame_id = strip_frame(b.header.frame_id)
+            if frame_id != self.fixed_frame_id:
                 try:
-                    ps = PoseStamped(header=b.header, pose=b.pose)
+                    ps = PoseStamped(pose=b.pose)
+                    ps.header.frame_id = frame_id
+                    ps.header.stamp = b.header.stamp
                     ps = self.tfl.transform(ps, self.fixed_frame_id)
                     boxes.boxes[i].pose = ps.pose
                 except Exception as e:
