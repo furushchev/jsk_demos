@@ -131,27 +131,6 @@
             to: input_relay/output
           - from: ~input/indices
             to: euclidean_clustering/output
-        - name: relay_prim_clf
-          type: jsk_topic_tools/Relay
-          remappings:
-          - from: ~input
-            to: primitive_shape_classifier/output
-          - from: ~output
-            to: classifiers/output
-        - name: relay_hist_clf
-          type: jsk_topic_tools/Relay
-          remappings:
-          - from: ~input
-            to: color_histogram_classifier/output
-          - from: ~output
-            to: classifiers/output
-        - name: relay_vol_clf
-          type: jsk_topic_tools/Relay
-          remappings:
-          - from: ~input
-            to: volume_classifier/output
-          - from: ~output
-            to: classifiers/output
       </rosparam>
     </node>
 

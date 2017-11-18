@@ -10,17 +10,21 @@
           pkg="jsk_2017_home_butler" type="annotation_aggregator.py"
           output="screen"
           machine="$(arg machine)">
-      <remap from="~input/pose/class" to="/ssd/ssd_object_detector/output/class" />
       <remap from="~input/pose/pose" to="/ssd/bounding_box_pose/output" />
-      <remap from="~input/box/class" to="/tabletop/classifiers/output" />
-      <remap from="~input/box/box" to="/tabletop/euclidean_clustering_decomposer/boxes"/>
+      <remap from="~input/pose/class0" to="/ssd/ssd_object_detector/output/class" />
+      <remap from="~input/bbox/bbox" to="/tabletop/euclidean_clustering_decomposer/boxes"/>
+      <remap from="~input/bbox/class0" to="/tabletop/color_histogram_classifier/output" />
+      <remap from="~input/bbox/class1" to="/tabletop/primitive_shape_classifier/output" />
+      <remap from="~input/bbox/class2" to="/tabletop/volume_classifier/output" />
       <rosparam subst_value="true">
-        approximate_sync: true
-        queue_size: 30
-        slop: 0.1
-        cache_duration: 10.0
+        approximate_sync: false
+        queue_size: 100
+        slop: 0.3
+        cache_duration: 6.0
         fixed_frame_id: $(arg sensor_frame_id)
         pose_tolerance: 0.06
+        pose_annotators_num: 1
+        bbox_annotators_num: 3
       </rosparam>
     </node>
     <node name="aggregator_vis"
