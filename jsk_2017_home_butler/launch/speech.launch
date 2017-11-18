@@ -1,27 +1,28 @@
 <launch>
 
-  <node name="audio_capture" pkg="audio_capture" type="audio_capture">
+  <include file="$(find pr2_machine)/pr2.machine" />
+
+  <!--
+  <node name="audio_capture" pkg="audio_capture" type="audio_capture"
+        machine="c2" output="screen">
     <rosparam>
+      device: plughw:1
       format: wave
       channels: 1
       depth: 16
       sample_rate: 16000
     </rosparam>
   </node>
-
-  <node pkg="sound_play" type="soundplay_node.py" name="sound_play">
-    <remap from="sound_play" to="robotsound"/>
-    <env name="PATH" value="$(find ros_gtts)/bin:$(env PATH)" />
-  </node>
-
-  <node name="text_to_speech" pkg="ros_gtts" type="ros_gtts_node.py" />
+  -->
 
   <node name="speech_recognition"
-        pkg="ros_speech_recognition" type="speech_recognition_node.py">
+        pkg="ros_speech_recognition" type="speech_recognition_node.py"
+        machine="c1" output="screen">
     <remap from="sound_play" to="robotsound" />
     <rosparam>
       engine: Google
       language: en-US
+      continuous: true
     </rosparam>
   </node>
 </launch>

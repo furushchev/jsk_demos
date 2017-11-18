@@ -125,7 +125,6 @@ class AnnotationAggregator(ConnectionBasedTransport):
             idx = result.target_names.index(cls)
             result.labels.append(idx)
             result.label_names.append(cls)
-            result.label_proba.append(0.5)
             poses.poses.append(p)
             box = BoundingBox(header=result.header)
             box.pose = p
@@ -147,9 +146,13 @@ class AnnotationAggregator(ConnectionBasedTransport):
 
         if poses.header.frame_id != self.fixed_frame_id:
             for i, p in enumerate(poses.poses):
-                ps = PoseStamped(header=poses.header, pose=p)
-                ps = self.tfl.transform(ps, self.fixed_frame_id)
-                poses.poses[i] = ps.pose
+                try:
+                    ps = PoseStamped(header=poses.header, pose=p)
+                    ps = self.tfl.transform(ps, self.fixed_frame_id)
+                    poses.poses[i] = ps.pose
+                except Exception as e:
+                    rospy.logerr(e)
+                    return
 
         for p, c in zip(poses.poses, cls.label_names):
             self.update_cache(cls.header.stamp, p, c, cls.classifier)
@@ -164,9 +167,13 @@ class AnnotationAggregator(ConnectionBasedTransport):
 
         if boxes.header.frame_id != self.fixed_frame_id:
             for i, b in enumerate(boxes.boxes):
-                ps = PoseStamped(header=b.header, pose=b.pose)
-                ps = self.tfl.transform(ps, self.fixed_frame_id)
-                boxes.boxes[i].pose = ps.pose
+                try:
+                    ps = PoseStamped(header=b.header, pose=b.pose)
+                    ps = self.tfl.transform(ps, self.fixed_frame_id)
+                    boxes.boxes[i].pose = ps.pose
+                except Exception as e:
+                    rospy.logerr(e)
+                    return
 
         for b, c in zip(boxes.boxes, cls.label_names):
             self.update_cache(cls.header.stamp, b.pose, c, cls.classifier)

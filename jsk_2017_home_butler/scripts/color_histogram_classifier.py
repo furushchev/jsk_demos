@@ -52,7 +52,6 @@ class ColorHistogramClassifier(ConnectionBasedTransport):
                 idx = 5
             cls.labels.append(idx)
             cls.label_names.append(cls.target_names[idx])
-            cls.label_proba.append(0.5)
 
         self.pub_class.publish(cls)
 

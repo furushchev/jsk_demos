@@ -47,20 +47,16 @@ class VolumeClassifier(ConnectionBasedTransport):
                 if volume > self.big_threshold:
                     msg.labels.append(3)
                     msg.label_names.append("big")
-                    msg.label_proba.append(1.0)
                 else:
                     msg.labels.append(2)
                     msg.label_names.append("small")
-                    msg.label_proba.append(1.0)
             else:
                 if volume > self.big_threshold:
                     msg.labels.append(1)
                     msg.label_names.append("tall")
-                    msg.label_proba.append(1.0)
                 else:
                     msg.labels.append(0)
                     msg.label_names.append("short")
-                    msg.label_proba.append(1.0)
         self.pub_class.publish(msg)
 
 
