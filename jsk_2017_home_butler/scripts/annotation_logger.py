@@ -31,10 +31,11 @@ class WriteBuffer(Thread):
 
     def add(self, cls):
         with self.lock:
-            if cls.header.stamp in self.buffer:
-                self.buffer[cls.header.stamp] = [cls]
-            else:
-                self.buffer[cls.header.stamp] += [cls]
+            key = cls.header.stamp
+            try:
+                self.buffer[key] += [cls]
+            except:
+                self.buffer[key] = [cls]
 
     def get(self):
         with self.lock:
@@ -84,7 +85,8 @@ class AnnotationLogger(object):
     def formatter(self, stamp, data):
         line = [str(stamp)]
         for cls in data:
-            line.append("%s=%s" % (cls.classifier, cls.label_names[0]))
+            if cls.label_names:
+                line.append("%s=%s" % (cls.classifier, cls.label_names[0]))
         return ",".join(line)
 
     def on_shutdown(self):

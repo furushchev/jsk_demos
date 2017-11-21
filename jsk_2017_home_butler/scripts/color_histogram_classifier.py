@@ -38,11 +38,11 @@ class ColorHistogramClassifier(ConnectionBasedTransport):
 
         for h in msg.histograms:
             idx = np.array(h.histogram).argmax()
-            if idx in [0,1,2,9]:
+            if idx in [0,1,9]:
                 idx = 0
-            elif idx in [3]:
+            elif idx in [2]:
                 idx = 1
-            elif idx in [4,5]:
+            elif idx in [3,4,5]:
                 idx = 2
             elif idx in [6,7,8]:
                 idx = 3
