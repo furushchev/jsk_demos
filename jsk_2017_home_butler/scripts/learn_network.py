@@ -22,7 +22,7 @@ def dump_graph(graph, out):
 
     d = dict()
     d["V"] = graph.V
-    d["E"] = graph.E
+    d["E"] = [{"from": e[0], "to": e[1]} for e in graph.E]
     d["Vdata"] = graph.Vdata
 
     with open(out, "w") as f:
@@ -143,8 +143,6 @@ def learn_graph(data_path):
         print "'info.structure' is missing"
         return False
 
-    # aggregate rules
-
     skel = GraphSkeleton()
     skel.V, skel.E = list(), list()
     skel.V += annotators
@@ -161,9 +159,31 @@ def learn_graph(data_path):
         else:
             skel.E += [[e["from"], e["to"]]]
 
-    network = make_network(skel, data)
+    learner = PGMLearner()
+    network = learner.discrete_mle_estimateparams(skel, data)
+
+    # add geta
+    for node in network.Vdata.keys():
+        if isinstance(network.Vdata[node]["cprob"], dict):
+            for n in network.Vdata[node]["cprob"].keys():
+                network.Vdata[node]["cprob"][n] = add_geta(network.Vdata[node]["cprob"][n])
+        else:
+            network.Vdata[node]["cprob"] = add_geta(network.Vdata[node]["cprob"])
 
     return network
+
+def add_geta(prob, geta=0.001):
+    z = len(filter(lambda x: x == 0, prob))
+    if z == 0:
+        return prob
+    nz = len(prob) - z
+    new_prob = []
+    for p in prob:
+        if p == 0:
+            new_prob.append(p + geta / z)
+        else:
+            new_prob.append(p - geta / nz)
+    return new_prob
 
 
 if __name__ == '__main__':

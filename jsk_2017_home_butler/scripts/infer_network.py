@@ -33,26 +33,35 @@ class InferNetwork(object):
 
         skel = GraphSkeleton()
         nd = NodeData()
-        skel.V, skel.E, nd.Vdata = data["V"], data["E"], data["Vdata"]
+        skel.V = data["V"]
+        skel.E = [[e["from"], e["to"]] for e in data["E"]]
+        nd.Vdata = data["Vdata"]
         skel.toporder()
         return DiscreteBayesianNetwork(skel, nd)
 
     def infer(self, evidence):
         var = list(set(self.network.V) - set(evidence.keys()))
         query = {v: self.network.Vdata[v]["vals"] for v in var}
+        print query
+        ret = {}
+        for k,v in query.items():
+            fn = TableCPDFactorization(self.network)
+            cpd = fn.condprobve({k:v}, evidence)
+            ret[k] = {v:p for v, p in zip(v, cpd.vals)}
+        return ret
 
-        cpd = TableCPDFactorization(self.network)
-        agg = SampleAggregator()
+        # return cpd.specificquery({"action": ["bring"]}, evidence=evidence)
+        # agg = SampleAggregator()
 
-        rospy.loginfo("Inferring...")
-        burn_in = int(self.sample_num * 0.1)
-        result = agg.aggregate(cpd.gibbssample(evidence, self.sample_num)[burn_in:])
-
-        return result
+        # rospy.loginfo("Inferring...")
+        # burn_in = int(self.sample_num * 0.1)
+        # result = agg.aggregate(cpd.gibbssample(evidence, self.sample_num)[burn_in:])
+        # return result
 
 
 if __name__ == '__main__':
+    import pprint
     n = InferNetwork()
     res = n.infer({"face": "furushchev",
-                   "class": "tea"})
-    print res
+                   "class": "coffee"})
+    pprint.pprint(res)
