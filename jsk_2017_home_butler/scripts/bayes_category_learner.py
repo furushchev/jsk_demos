@@ -106,6 +106,8 @@ class BayesCategoryLearner(object):
                         # default to even distribution if no data points
                         bn.Vdata[vertex]["cprob"][key] = [1/float(bn.Vdata[vertex]["numoutcomes"]) for x in bn.Vdata[vertex]["cprob"][key]]
 
+        # TODO: add GETA
+
         return bn
 
     def learn(self):
