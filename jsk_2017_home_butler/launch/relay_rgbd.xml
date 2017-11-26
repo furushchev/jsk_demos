@@ -1,0 +1,27 @@
+<launch>
+  <arg name="machine" default="remote" />
+
+  <arg name="camera" default="kinect_head_$(arg machine)" />
+
+  <include file="$(find openni_launch)/launch/openni.launch">
+    <arg name="camera" value="$(arg camera)" />
+    <arg name="rgb_frame_id" value="/head_mount_kinect_rgb_optical_frame" />
+    <arg name="depth_frame_id" value="/head_mount_kinect_rgb_optical_frame" />
+    <arg name="publish_tf" value="false" />
+    <arg name="load_driver" value="false" />
+    <arg name="depth_registration" value="true" />
+    <arg name="debayer_processing" value="true" />
+  </include>
+
+  <node name="rgb_decompress" pkg="image_transport" type="republish"
+        args="compressed raw">
+    <remap from="in" to="kinect_head/rgb/image_raw" />
+    <remap from="out" to="$(arg camera)/rgb/image_color" />
+  </node>
+
+  <node name="depth_decompress" pkg="image_transport" type="republish"
+        args="compressedDepth raw">
+    <remap from="in" to="kinect_head/depth_registered/image_raw"/>
+    <remap from="out" to="$(arg camera)/depth\registered/image_raw" />
+  </node>
+</launch>
