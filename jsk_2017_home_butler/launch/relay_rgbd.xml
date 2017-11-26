@@ -33,7 +33,7 @@
 
   <node name="rgb_decompress" pkg="image_transport" type="republish"
         args="compressed raw">
-    <remap from="in" to="kinect_head/rgb/image_raw" />
+    <remap from="in" to="kinect_head/rgb/image_color" />
     <remap from="out" to="$(arg camera)/rgb/image_color" />
   </node>
 
