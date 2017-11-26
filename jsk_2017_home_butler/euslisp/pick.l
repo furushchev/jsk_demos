@@ -4,9 +4,21 @@
 
 (ros::load-ros-manifest "jsk_2017_home_butler")
 (require :pr2-interface "package://pr2eus/pr2-interface.l")
+(require :pr2-action "package://jsk_demo_common/euslisp/pr2-action.l")
+(require :detection-interface "package://jsk_perception/euslisp/detection_interface.l")
+(defparameter *detection-topic* "/kinect_head/rgb/ObjectDetection")
+
 
 (defun pick-action-cb (server goal)
-  (let ((res (send server :result)))
+  (let ((obj (send goal :object))
+        (arm (send goal :arm))
+        (res (send server :result)))
+
+    ;; TODO: debug
+    (setq *type* (or obj "georgia"))
+    (grasp-can :use-arm :larm)
+    (close-fridge :use-arm :larm)
+
     (send server :set-succeeded res)))
 
 ;; main

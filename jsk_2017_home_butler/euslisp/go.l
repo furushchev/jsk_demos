@@ -5,11 +5,27 @@
 (ros::load-ros-manifest "jsk_2017_home_butler")
 (require :pr2-interface "package://pr2eus/pr2-interface.l")
 (require :eng2-scene "package://jsk_maps/src/eng2-scene.l")
+(require :pr2-action "package://jsk_demo_common/euslisp/pr2-action.l")
+
+(defparameter *init-pos* nil)
 
 (defun go-action-cb (server goal)
   (let ((res (send server :result))
         (spot (send goal :goal :location)))
     (ros::ros-info "spot: ~A" spot)
+
+    ;; TODO: DEBUG
+    (when (substringp "fridge" spot)
+      (setq *init-pos* (send *ri* :state :worldcoords))
+      (pr2-tuckarm-pose :rarm)
+      (goto-front-of-fridge))
+    (when (substringp "operator" spot)
+      (send *ri* :go-pos-unsafe 0 0 -90)
+      (send *ri* :wait-interpolation)
+      (if *init-pos* (send *ri* :move-to *init-pos*)))
+    (return-from go-action-cb
+      (send server :set-succeeded res))
+
     (when (or
            (null spot)
            (string= "" spot)

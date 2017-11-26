@@ -1,0 +1,39 @@
+<launch>
+  <arg name="machine" default="c1" />
+
+  <include file="$(find jsk_2017_home_butler)/launch/action.xml">
+    <arg name="machine" value="$(arg machine)" />
+    <arg name="action" value="pick" />
+  </include>
+
+  <include file="$(find jsk_2017_home_butler)/launch/action.xml">
+    <arg name="machine" value="$(arg machine)" />
+    <arg name="action" value="place" />
+  </include>
+
+  <include file="$(find jsk_2017_home_butler)/launch/action.xml">
+    <arg name="machine" value="$(arg machine)" />
+    <arg name="action" value="speak" />
+  </include>
+
+  <include file="$(find jsk_2017_home_butler)/launch/action.xml">
+    <arg name="machine" value="$(arg machine)" />
+    <arg name="action" value="go" />
+  </include>
+
+  <include file="$(find jsk_2017_home_butler)/launch/action.xml">
+    <arg name="machine" value="$(arg machine)" />
+    <arg name="action" value="deliver" />
+  </include>
+
+  <include file="$(find jsk_2017_home_butler)/launch/action.xml">
+    <arg name="machine" value="$(arg machine)" />
+    <arg name="action" value="find_object" />
+  </include>
+
+  <include file="$(find jsk_2017_home_butler)/launch/action.xml">
+    <arg name="machine" value="$(arg machine)" />
+    <arg name="action" value="find_person" />
+  </include>
+
+</launch>

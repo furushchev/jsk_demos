@@ -4,6 +4,7 @@
   <arg name="use_ssd" default="true" />
   <arg name="use_tabletop" default="true" />
   <arg name="use_aggregator" default="true" />
+  <arg name="use_actions" default="true" />
 
   <include file="$(find jsk_2017_home_butler)/launch/relay_rgbd.launch"
            if="$(arg use_relay)" />
@@ -19,4 +20,7 @@
 
   <include file="$(find jsk_2017_home_butler)/launch/aggregator.launch"
            if="$(arg use_aggregator)" />
+
+  <include file="$(find jsk_2017_home_butler)/launch/actions.launch"
+           if="$(arg use_actions)" />
 </launch>

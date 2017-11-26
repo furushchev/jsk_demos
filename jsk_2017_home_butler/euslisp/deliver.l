@@ -5,9 +5,14 @@
 
 (ros::load-ros-manifest "jsk_2017_home_butler")
 (require :pr2-interface "package://pr2eus/pr2-interface.l")
+(require :pr2-action "package://jsk_demo_common/euslisp/pr2-action.l")
 
 (defun deliver-action-cb (server goal)
   (let ((res (send server :result)))
+
+    ;; TODO: debug
+    (hand-over :larm :wait-shock t)
+
     (send server :set-succeeded res)))
 
 ;; main

@@ -1,0 +1,12 @@
+<launch>
+  <arg name="machine" default="c1" />
+  <arg name="action" default="pick" />
+
+  <include file="$(find jsk_2017_home_butler)/pr2.machine" />
+
+  <node name="$(arg action)_action_server"
+        pkg="roseus" type="roseus"
+        args="$(find jsk_2017_home_butler)/euslisp/$(arg action).l"
+        machine="$(arg machine)"
+        output="screen" />
+</launch>
