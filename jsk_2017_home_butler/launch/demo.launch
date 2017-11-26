@@ -1,7 +1,15 @@
 <launch>
+  <arg name="use_relay" default="true" />
+  <arg name="use_interaction" default="true" />
   <arg name="use_ssd" default="true" />
   <arg name="use_tabletop" default="true" />
   <arg name="use_aggregator" default="true" />
+
+  <include file="$(find jsk_2017_home_butler)/launch/relay_rgbd.launch"
+           if="$(arg use_relay)" />
+
+  <include file="$(find jsk_2017_home_butler)/launch/interaction.launch"
+           if="$(arg use_interaction)" />
 
   <include file="$(find jsk_2017_home_butler)/launch/ssd.launch"
            if="$(arg use_ssd)" />

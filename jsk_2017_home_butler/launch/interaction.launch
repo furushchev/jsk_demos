@@ -1,0 +1,84 @@
+<launch>
+  <arg name="use_throttle" default="false" />
+  <arg name="use_sppech_recognition" default="true" />
+  <arg name="respawn" default="true" />
+
+  <arg name="camera" default="kinect_head_external" />
+  <arg name="throttle_prefix"     if="$(arg use_throttle)" default="throttled/" />
+  <arg name="throttle_prefix" unless="$(arg use_throttle)" default="" />
+
+  <arg name="input_image" default="/$(arg camera)/rgb/$(arg throttle_prefix)image_rect_color" />
+  <arg name="input_depth" default="/$(arg camera)/depth_registered/$(arg throttle_prefix)image_rect" />
+
+  <arg name="machine" default="external" />
+
+  <include file="$(find jsk_2017_home_butler)/pr2.machine" />
+
+  <node name="speech_recognition"
+        pkg="ros_speech_recognition" type="speech_recognition_node.py"
+        machine="c1" output="screen">
+    <remap from="sound_play" to="robotsound" />
+    <rosparam>
+      engine: Google
+      language: en-US
+      continuous: true
+    </rosparam>
+  </node>
+
+  <group ns="interaction">
+
+    <node name="manager"
+          pkg="jsk_topic_tools" type="standalone_complexed_nodelet"
+          output="screen" respawn="$(arg respawn)"
+          machine="$(arg machine)">
+      <rosparam subst_value="true">
+        nodelets:
+        - name: depth_to_mask
+          type: jsk_perception/DepthToMaskImage
+          remappings:
+          - from: ~input
+            to: $(arg input_depth)
+        - name: apply_mask
+          type: jsk_perception/ApplyMaskImage
+          remappings:
+          - from: ~input
+            to: $(arg input_image)
+          - from: ~input/mask
+            to: depth_to_mask/output
+        - name: face_detection
+          type: opencv_apps/face_detection
+          remappings:
+          - from: image
+            to: apply_mask/output
+        - name: face_recognition
+          type: opencv_apps/face_recognition
+          remappings:
+          - from: image
+            to: $(arg input_image)
+          - from: faces
+            to: face_detection/faces
+      </rosparam>
+    </node>
+
+    <rosparam ns="depth_to_mask">
+      z_near: 1.0
+      z_far: 3.0
+    </rosparam>
+
+    <rosparam ns="apply_mask">
+      approximate_sync: true
+    </rosparam>
+
+    <rosparam ns="face_detection">
+      use_camera_info: false
+      debug_view: false
+      face_cascade_name: /usr/share/opencv/haarcascades/haarcascade_frontalface_alt.xml
+      eyes_cascade_name: /usr/share/opencv/haarcascades/haarcascade_eye_tree_eyeglasses.xml
+    </rosparam>
+
+    <rosparam ns="face_recognition">
+      model_threshold: 4300.0
+      data_dir: /home/furushchev/.ros/opencv_apps/face_data
+    </rosparam>
+  </group>
+</launch>

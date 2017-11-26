@@ -25,6 +25,12 @@
     <remap from="~output" to="$(arg camera)/depth_registered/camera_info" />
   </node>
 
+  <node name="relay_depth_image" pkg="nodelet" type="nodelet"
+        args="load jsk_topic_tools/Relay $(arg manager)">
+    <remap from="~input" to="$(arg camera)/depth_registered/hw_registered/image_rect" />
+    <remap from="~output" to="$(arg camera)/depth_registered/image_rect" />
+  </node>
+
   <node name="rgb_decompress" pkg="image_transport" type="republish"
         args="compressed raw">
     <remap from="in" to="kinect_head/rgb/image_raw" />

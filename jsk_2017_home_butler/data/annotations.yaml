@@ -1,0 +1,196 @@
+graph:
+  structure:
+    - from: action
+      to: class
+    - from: class
+      to: object
+    - from: object
+      to: annotators
+  annotators:
+    - color
+    - shape
+    - volume
+    - face
+data:
+  - color: green
+    shape: box
+    volume: short
+    face: furushchev
+    action: bring
+    class: tea
+    object: iemon
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: blue
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: georgia
+  - color: red
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: wanda
+  - color: white
+    shape: circle
+    volume: short
+    face: furushchev
+    action: bring
+    class: coffee
+    object: boss
+  - color: white
+    shape: circle
+    volume: small
+    face: furushchev
+    action: bring
+    class: sweets
+    object: manju
+  - color: red
+    shape: box
+    volume: small
+    face: furushchev
+    action: bring
+    class: hamburger
+    object: bigmac
+  - color: blue
+    shape: box
+    volume: big
+    face: furushchev
+    action: bring
+    class: milk
+    object: morinaga
+  - color: blue
+    shape: circle
+    volume: tall
+    face: furushchev
+    action: bring
+    class: shampoo
+    object: merit
+  - color: blue
+    shape: circle
+    volume: tall
+    face: furushchev
+    action: bring
+    class: shampoo
+    object: merit
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda
+  - color: red
+    shape: circle
+    volume: short
+    face: otsubo
+    action: bring
+    class: coffee
+    object: wanda

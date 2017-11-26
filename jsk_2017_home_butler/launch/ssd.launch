@@ -1,9 +1,9 @@
 <launch>
-  <arg name="use_throttle" default="true" />
+  <arg name="use_throttle" default="false" />
   <arg name="respawn" default="true" />
   <arg name="use_voc" default="false" />
 
-  <arg name="camera" default="kinect_head" />
+  <arg name="camera" default="kinect_head_external" />
   <arg name="throttle_prefix"     if="$(arg use_throttle)" default="throttled/" />
   <arg name="throttle_prefix" unless="$(arg use_throttle)" default="" />
 
