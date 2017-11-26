@@ -5,6 +5,7 @@
 import re
 import actionlib
 import rospy
+from jsk_gui_msgs.msg import VoiceMessage
 from sound_play.msg import SoundRequest
 from sound_play.msg import SoundRequestAction, SoundRequestGoal
 from speech_recognition_msgs.srv import SpeechRecognition
@@ -57,6 +58,31 @@ class SpeechMixin(object):
                 ac.wait_for_result(timeout=rospy.Duration(timeout))
         return True
 
+    def _voice_callback(self, msg):
+        self.speech_msg = msg.texts
+
+    def listen_topic(self, duration=3.0, retry=2, choices=None):
+        self.speech_msg = None
+        sub = rospy.Subscriber("/Tablet/voice", VoiceMessage,
+                               self._voice_callback, queue_size=1)
+        rate = rospy.Rate(10)
+        speech = None
+        for i in range(int(duration*10)):
+            speech = self.speech_msg
+            if speech:
+                if choices:
+                    for t in speech:
+                        if t in choices:
+                            speech = t
+                            break
+                else:
+                    speech = speech[0]
+                    break
+            rate.sleep()
+        sub.unregister()
+        self.speech_msg = None
+        return speech
+
     def listen(self, duration=3.0, retry=2, grammar=None, threshold=0.9, choices=None, quiet=False, ns=None):
         """Listen to speech.
         Either choices or grammar must be specified.
@@ -93,7 +119,7 @@ class SpeechMixin(object):
             rospy.wait_for_service(ns, timeout=1)
         except rospy.ROSException as e:
             rospy.logerr("service /%s not yet advertised?" % ns)
-            return raw_input("Please input sentence: ")
+            return self.listen_topic(duration=duration, retry=retry, choices=choices)
 
         sr = rospy.ServiceProxy(ns, SpeechRecognition)
 

@@ -1,6 +1,6 @@
 <launch>
   <arg name="use_throttle" default="false" />
-  <arg name="use_sppech_recognition" default="true" />
+  <arg name="use_speech_recognition" default="true" />
   <arg name="respawn" default="true" />
 
   <arg name="camera" default="kinect_head_external" />
@@ -14,16 +14,28 @@
 
   <include file="$(find jsk_2017_home_butler)/pr2.machine" />
 
-  <node name="speech_recognition"
-        pkg="ros_speech_recognition" type="speech_recognition_node.py"
-        machine="c1" output="screen">
-    <remap from="sound_play" to="robotsound" />
-    <rosparam>
-      engine: Google
-      language: en-US
-      continuous: true
-    </rosparam>
-  </node>
+  <group if="$(arg use_speech_recognition)">
+    <node name="audio_capture" pkg="audio_capture" type="audio_capture"
+          machine="c2" output="screen">
+      <rosparam>
+        format: wave
+        channels: 1
+        depth: 16
+        sample_rate: 16000
+        device: plughw:1
+      </rosparam>
+    </node>
+    <node name="speech_recognition"
+          pkg="ros_speech_recognition" type="speech_recognition_node.py"
+          machine="c2" output="screen">
+      <remap from="sound_play" to="robotsound" />
+      <rosparam>
+        engine: Google
+        language: en-US
+        continuous: true
+      </rosparam>
+    </node>
+  </group>
 
   <group ns="interaction">
 
