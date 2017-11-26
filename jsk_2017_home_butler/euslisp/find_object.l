@@ -22,7 +22,7 @@
       (instance ros::simple-action-server :init
                 "/find_object"
                 jsk_2017_home_butler::FindObjectAction
-                :execute-cb #'find-object-action-cb))
+                :execute-cb 'find-object-action-cb))
 (ros::rate 10)
 (while
  (ros::ok)

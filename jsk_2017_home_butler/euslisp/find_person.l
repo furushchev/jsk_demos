@@ -17,7 +17,8 @@
       (instance ros::simple-action-server :init
                 "/find_person"
                 jsk_2017_home_butler::FindPersonAction
-                :execute-cb #'find-person-action-cb))
+                :execute-cb 'find-person-action-cb))
+
 (ros::rate 10)
 (while
  (ros::ok)

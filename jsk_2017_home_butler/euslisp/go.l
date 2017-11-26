@@ -3,11 +3,11 @@
 ;; Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
 (ros::load-ros-manifest "jsk_2017_home_butler")
-(require :pr2-interface "package://pr2eus/pr2-interface.l")
-(require :eng2-scene "package://jsk_maps/src/eng2-scene.l")
-(require :pr2-action "package://jsk_demo_common/euslisp/pr2-action.l")
 
 (defparameter *init-pos* nil)
+
+(require :pr2-interface "package://pr2eus/pr2-interface.l")
+(require :pr2-move "package://jsk_demo_common/euslisp/pr2-move.l")
 
 (defun go-action-cb (server goal)
   (let ((res (send server :result))
@@ -17,7 +17,9 @@
     ;; TODO: DEBUG
     (when (substringp "fridge" spot)
       (setq *init-pos* (send *ri* :state :worldcoords))
+      (ros::ros-warn "tuckarm")
       (pr2-tuckarm-pose :rarm)
+      (ros::ros-info "going to fridge")
       (goto-front-of-fridge))
     (when (substringp "operator" spot)
       (send *ri* :go-pos-unsafe 0 0 -90)
@@ -41,13 +43,13 @@
 (ros::roseus "go_server")
 
 (pr2-init)
-(setq *scene* (make-eng2-scene))
+;;(setq *scene* (make-eng2-scene))
 
 (setq *server*
       (instance ros::simple-action-server :init
                 "/go"
                 jsk_2017_home_butler::GoAction
-                :execute-cb #'go-action-cb)))
+                :execute-cb 'go-action-cb)))
 (ros::rate 10)
 (while
  (ros::ok)

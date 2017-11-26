@@ -22,7 +22,7 @@
       (instance ros::simple-action-server :init
                 "/deliver"
                 jsk_2017_home_butler::DeliverAction
-                :execute-cb #'deliver-action-cb))
+                :execute-cb 'deliver-action-cb))
 (ros::rate 10)
 (while
  (ros::ok)

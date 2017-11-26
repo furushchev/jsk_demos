@@ -16,7 +16,8 @@
       (instance ros::simple-action-server :init
                 "/place"
                 jsk_2017_home_butler::PlaceAction
-                :execute-cb #'place-action-cb))
+                :execute-cb 'place-action-cb))
+
 (ros::rate 10)
 (while
  (ros::ok)

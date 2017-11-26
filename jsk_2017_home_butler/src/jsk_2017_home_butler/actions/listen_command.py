@@ -2,13 +2,16 @@
 # -*- coding: utf-8 -*-
 # Author: Furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
+import traceback
 import rospy
 from smach import State
 from jsk_2017_home_butler.action_loader import ActionLoader
 from jsk_2017_home_butler.preprocessor import CommandPreprocessor
 from jsk_2017_home_butler.command_parser import CommandParser
 from jsk_2017_home_butler.interpolator import CommandInterpolator
+from jsk_2017_home_butler.interpolator import CommandInterpolateError
 from jsk_2017_home_butler.interpolator import UnknownSymbolError
+from jsk_2017_home_butler.interpolator import SymbolPropertyMissingError
 from jsk_2017_home_butler.unknown_object_database import UnknownObjectDatabase
 from jsk_2017_home_butler.utils import SpeechMixin
 
@@ -63,6 +66,7 @@ class ListenCommandAction(State, SpeechMixin):
                 break
             except UnknownSymbolError as e:
                 rospy.logerr(str(e))
+                rospy.logerr(traceback.format_exc())
                 self.say("Sorry, %s." % str(e))
                 valid = e.valid_commands
                 cmd = e.command
@@ -72,7 +76,7 @@ class ListenCommandAction(State, SpeechMixin):
                     rospy.loginfo("q: %s" % q)
                     answer = self.ask(q, grammar="gpsr")
                     rospy.loginfo("a: %s" % answer)
-                    answer = "living drawer"  # FIXME: temp fix for testing
+                    # answer = "living drawer"  # FIXME: temp fix for testing
                     cmd.add_argument(key, answer)
                 elif "what" in str(e):
                     q = "What is %s?" % cmd.arguments["object"]
@@ -89,6 +93,20 @@ class ListenCommandAction(State, SpeechMixin):
                 rospy.loginfo("cmd: %s" % cmd)
                 rospy.loginfo("commands: %s" % actions)
                 actions = valid + [cmd] + e.all_commands[1:]
+            except SymbolPropertyMissingError as e:
+                rospy.logerr(str(e))
+                rospy.logerr(traceback.format_exc())
+                self.say("Sorry, %s" % str(e))
+                cmd = e.command
+                if "where" in str(e):
+                    loc = self.ask("Where is %s located?" % cmd.arguments["object"], grammar="gpsr")
+                    cmd.add_argument("location", loc)
+                actions = e.valid_commands + [cmd] + e.all_commands[1:]
+            except CommandInterpolateError as e:
+                rospy.logerr(e)
+                rospy.logerr(traceback.format_exc())
+                self.say("Sorry, %s." % str(e))
+                return list()
 
         return actions
 

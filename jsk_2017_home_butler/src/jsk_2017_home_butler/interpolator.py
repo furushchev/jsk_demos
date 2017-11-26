@@ -29,6 +29,10 @@ class UnknownSymbolError(CommandInterpolateError):
     pass
 
 
+class SymbolPropertyMissingError(CommandInterpolateError):
+    pass
+
+
 class CommandInterpolator(object):
     def __init__(self, align=True):
         self.resource = ResourceLoader()
@@ -247,7 +251,7 @@ class CommandInterpolator(object):
                         cmd.add_argument("location", state["location"])
                 else:
                     # no default location found
-                    raise CommandInterpolateError(
+                    raise SymbolPropertyMissingError(
                         "I could not know where %s is located." % cmd.arguments["object"],
                         cmd, valid, cmds, state)
 

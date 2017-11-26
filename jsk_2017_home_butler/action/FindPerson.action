@@ -1,3 +1,5 @@
 string person
+string location
+string question
 ---
 ---

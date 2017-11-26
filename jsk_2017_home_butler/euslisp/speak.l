@@ -21,7 +21,8 @@
       (instance ros::simple-action-server :init
                 "/speak"
                 jsk_2017_home_butler::SpeakAction
-                :execute-cb #'speak-action-cb))
+                :execute-cb 'speak-action-cb))
+
 (ros::rate 10)
 (while
  (ros::ok)

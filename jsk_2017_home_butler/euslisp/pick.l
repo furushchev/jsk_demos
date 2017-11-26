@@ -10,12 +10,12 @@
 
 
 (defun pick-action-cb (server goal)
-  (let ((obj (send goal :object))
-        (arm (send goal :arm))
+  (let ((obj (send goal :goal :object))
         (res (send server :result)))
 
     ;; TODO: debug
     (setq *type* (or obj "georgia"))
+    (open-fridge-door :user-arm :larm)
     (grasp-can :use-arm :larm)
     (close-fridge :use-arm :larm)
 
@@ -24,11 +24,13 @@
 ;; main
 (ros::roseus "pick_server")
 
+(pr2-init)
+
 (setq *server*
       (instance ros::simple-action-server :init
                 "/pick"
                 jsk_2017_home_butler::PickAction
-                :execute-cb #'pick-action-cb))
+                :execute-cb 'pick-action-cb))
 (ros::rate 10)
 (while
  (ros::ok)

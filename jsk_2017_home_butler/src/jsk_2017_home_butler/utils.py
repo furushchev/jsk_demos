@@ -23,6 +23,8 @@ def camel_to_snake(text):
 _ACTION_CLIENTS = {}
 class SpeechMixin(object):
     def say(self, text, lang="", wait=True, timeout=10, ns=None):
+        rospy.loginfo(text)
+        return True
         global _ACTION_CLIENTS
         msg = SoundRequest(
             sound=SoundRequest.SAY,
@@ -119,7 +121,8 @@ class SpeechMixin(object):
             rospy.wait_for_service(ns, timeout=1)
         except rospy.ROSException as e:
             rospy.logerr("service /%s not yet advertised?" % ns)
-            return self.listen_topic(duration=duration, retry=retry, choices=choices)
+            return raw_input("speech?:")
+            # return self.listen_topic(duration=duration, retry=retry, choices=choices)
 
         sr = rospy.ServiceProxy(ns, SpeechRecognition)
 

@@ -68,9 +68,14 @@ def make_action(name, spec,
 
     def goal_cb(userdata, goal):
         assert isinstance(userdata.arguments, dict)
+        argkeys = set(userdata.arguments.keys())
+        goalkeys = set(goal.__slots__)
+        diffkeys = goalkeys.difference(argkeys)
+        if diffkeys:
+            rospy.logwarn("Arguments are missing?: %s" % diffkeys)
         for k, v in userdata.arguments.items():
-            assert hasattr(goal, k)
-            setattr(goal, k, v)
+            if hasattr(goal, k):
+                setattr(goal, k, v)
         return goal
 
     def result_cb(userdata, status, result):

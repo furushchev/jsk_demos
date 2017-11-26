@@ -1,4 +1,6 @@
 string content
+string location
+string person
 ---
 string answer
 ---

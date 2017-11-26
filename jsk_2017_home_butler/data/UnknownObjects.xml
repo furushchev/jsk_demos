@@ -17,4 +17,24 @@
     <property type="color" value="red"/>
     <property type="volume" value="small"/>
   </object>
+  <object defaultLocation="" name="georgia">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
+  <object defaultLocation="living drawer" name="georgia">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
+  <object defaultLocation="" name="boss">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
+  <object defaultLocation="living drawer" name="boss">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
+  <object defaultLocation="fridge" name="boss">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
 </objects>
