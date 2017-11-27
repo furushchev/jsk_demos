@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 # Author: Yuki Furuta <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
+import copy
+import operator
 import os
 import rospkg
 import rospy
@@ -18,6 +20,10 @@ from libpgm.sampleaggregator import SampleAggregator
 PKGDIR = rospkg.RosPack().get_path("jsk_2017_home_butler")
 
 
+def argmax(d):
+    return max(d.iteritems(), key=operator.itemgetter(1))
+
+
 class InferNetwork(object):
     def __init__(self):
         super(InferNetwork, self).__init__()
@@ -25,7 +31,7 @@ class InferNetwork(object):
         graph_path = rospy.get_param(
             "~graph_path", os.path.join(PKGDIR, "data", "graph.yaml"))
         self.sample_num = rospy.get_param("~sample_num", 10000)
-        self.network = self.load_network(graph_path)
+        self.network, self.annotators = self.load_network(graph_path)
 
     def load_network(self, path):
         with open(path, "r") as f:
@@ -37,12 +43,12 @@ class InferNetwork(object):
         skel.E = [[e["from"], e["to"]] for e in data["E"]]
         nd.Vdata = data["Vdata"]
         skel.toporder()
-        return DiscreteBayesianNetwork(skel, nd)
+        return DiscreteBayesianNetwork(skel, nd), data["annotators"]
 
     def infer(self, evidence):
         var = list(set(self.network.V) - set(evidence.keys()))
         query = {v: self.network.Vdata[v]["vals"] for v in var}
-        print query
+        # print query
         ret = {}
         for k,v in query.items():
             fn = TableCPDFactorization(self.network)
@@ -50,18 +56,51 @@ class InferNetwork(object):
             ret[k] = {v:p for v, p in zip(v, cpd.vals)}
         return ret
 
-        # return cpd.specificquery({"action": ["bring"]}, evidence=evidence)
-        # agg = SampleAggregator()
+    def get_result(self, key, evidence, inferred, threshold=0.8):
+        if key in evidence:
+            return evidence[key]
 
-        # rospy.loginfo("Inferring...")
-        # burn_in = int(self.sample_num * 0.1)
-        # result = agg.aggregate(cpd.gibbssample(evidence, self.sample_num)[burn_in:])
-        # return result
+        candidate = argmax(inferred[key])
+        if candidate[1] > threshold:
+            return candidate[0]
+
+        return str()
+
+    def get_nl(self, evidence, inferred, threshold=0.8):
+        nl = str()
+        # action
+        act = self.get_result("action", evidence, inferred, threshold)
+        if act:
+            nl += " " + act
+        obj = self.get_result("object", evidence, inferred, threshold)
+        if obj:
+            nl += " " + obj
+        else:
+            for anno in filter(lambda a: a["type"] == "object", self.annotators):
+                result = self.get_result(anno["name"], evidence, inferred, threshold)
+                if result:
+                    nl += " " + result
+
+            cls = self.get_result("class", evidence, inferred, threshold)
+            if cls:
+                nl += " " + cls
+            else:
+                nl += " object"
+
+        face = self.get_result("face", evidence, inferred, threshold)
+        if face:
+            nl += " to " + face
+
+        print nl
+
 
 
 if __name__ == '__main__':
-    import pprint
+    evidence = {
+        "face": "furushchev",
+        "class": "coffee",
+    }
+
     n = InferNetwork()
-    res = n.infer({"face": "furushchev",
-                   "class": "coffee"})
-    pprint.pprint(res)
+    inferred = n.infer(evidence)
+    n.get_nl(evidence, inferred, 0.7)

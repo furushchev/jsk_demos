@@ -7,10 +7,14 @@ graph:
     - from: object
       to: annotators
   annotators:
-    - color
-    - shape
-    - volume
-    - face
+    - name: color
+      type: object
+    - name: shape
+      type: object
+    - name: volume
+      type: object
+    - name: face
+      type: person
 data:
   - color: green
     shape: box

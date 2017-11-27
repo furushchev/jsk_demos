@@ -14,7 +14,7 @@ from libpgm.pgmlearner import PGMLearner
 from libpgm.tablecpdfactorization import TableCPDFactorization
 
 
-def dump_graph(graph, out):
+def dump_graph(graph, annotators, out):
     assert hasattr(graph, "V"), "No node found in graph"
     assert hasattr(graph, "E"), "No edge found in graph"
     assert hasattr(graph, "Vdata"), "No CPT found in graph"
@@ -24,6 +24,7 @@ def dump_graph(graph, out):
     d["V"] = graph.V
     d["E"] = [{"from": e[0], "to": e[1]} for e in graph.E]
     d["Vdata"] = graph.Vdata
+    d["annotators"] = annotators
 
     with open(out, "w") as f:
         yaml.dump(d, f)
@@ -129,7 +130,7 @@ def learn_graph(data_path):
 
     # load information
     try:
-        annotators = meta["annotators"]
+        annotators = [m["name"] for m in meta["annotators"]]
         print "annotators: %s" % annotators
     except:
         print "no annotators information found"
@@ -170,7 +171,7 @@ def learn_graph(data_path):
         else:
             network.Vdata[node]["cprob"] = add_geta(network.Vdata[node]["cprob"])
 
-    return network
+    return network, meta["annotators"]
 
 def add_geta(prob, geta=0.001):
     z = len(filter(lambda x: x == 0, prob))
@@ -195,5 +196,5 @@ if __name__ == '__main__':
 
     args = p.parse_args()
 
-    network = learn_graph(args.data)
-    dump_graph(network, args.out)
+    network, annotators = learn_graph(args.data)
+    dump_graph(network, annotators, args.out)
