@@ -12,10 +12,6 @@
     <property type="color" value="red"/>
     <property type="volume" value="small"/>
   </object>
-  <object defaultLocation="living drawer" name="georgia">
-    <property type="color" value="blue"/>
-    <property type="volume" value="short"/>
-  </object>
   <object defaultLocation="fridge" name="boss">
     <property type="color" value="red"/>
     <property type="volume" value="short"/>

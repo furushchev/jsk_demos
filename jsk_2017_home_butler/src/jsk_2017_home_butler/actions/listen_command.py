@@ -77,7 +77,7 @@ class ListenCommandAction(State, SpeechMixin):
             raise ValueError("object name is not found")
         q = "What is %s" % name
         answer = self.ask(q, grammar="gpsr")
-        
+        return answer
 
     def interpolate(self, actions):
         while True:
@@ -140,6 +140,9 @@ class ListenCommandAction(State, SpeechMixin):
             query = self.listen_query()
         if not query:
             return 'failed'
+
+        query = self.nl_inference.infer_sentence(query)
+
         self.say("You said: %s" % query)
         userdata.query = query
 

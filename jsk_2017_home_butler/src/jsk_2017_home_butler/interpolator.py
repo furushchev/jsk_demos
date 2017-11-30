@@ -65,7 +65,8 @@ class CommandInterpolator(object):
         loc = cmd.arguments["location"]
         blacklist = ["it"]
         db = UnknownObjectDatabase()
-        if self.align and obj and obj not in blacklist and db.get_properties(obj, loc) is None:
+        prop = db.get_properties(obj, loc)
+        if self.align and obj and obj not in blacklist and not prop:
             try:
                 inferred, confidence = self.obj_clf.infer(obj, with_proba=True)
                 if confidence >= 1.0:
@@ -137,7 +138,7 @@ class CommandInterpolator(object):
 
     def backtrack(self, cmds, state, valid, depth, max_depth, ac_loader):
         if depth >= max_depth:
-            raise OverflowError("search depth exceeds maximum: %d >= %d" % (depth, max_depth))
+            raise OverflowError("search depth exceeds maximum: %d >= %d: %s %s" % (depth, max_depth, valid, cmds))
         if not cmds:
             return valid
         cmd = cmds[0]
@@ -194,7 +195,9 @@ class CommandInterpolator(object):
             else:
                 # check default location. if exists, go to default location
                 # otherwise find at current position.
+                db = UnknownObjectDatabase()
                 obj_locs = {e["name"]: e["defaultLocation"] for e in self.resource.objects}
+                obj_locs.update({e["name"]: e["location"] for e in db.objects})
                 if cmd.arguments["object"] in obj_locs.keys():
                     loc = obj_locs[cmd.arguments["object"]]
                     if state["location"] != loc:
@@ -239,7 +242,9 @@ class CommandInterpolator(object):
             else:
                 # check default location. if exists, go to default location
                 # otherwise find at current position.
+                db = UnknownObjectDatabase()
                 obj_locs = {e["name"]: e["defaultLocation"] for e in self.resource.objects}
+                obj_locs.update({e["name"]: e["location"] for e in db.objects})
 
                 if cmd.arguments["object"] in obj_locs:
                     loc = obj_locs[cmd.arguments["object"]]

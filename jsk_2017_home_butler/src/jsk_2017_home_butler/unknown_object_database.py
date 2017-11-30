@@ -85,10 +85,13 @@ class UnknownObjectDatabase(object):
 
         self.update(name, properties, location)
 
-    def get_properties(self, name, location):
-        obj = filter(lambda e: e["name"] == name and e["location"] == location, self.objects)
-        if obj:
-            return obj[0]["properties"]
+    def get_properties(self, name, location=str()):
+        for obj in self.objects:
+            if location:
+                if obj["name"] == name and obj["location"] == location:
+                    return obj
+            elif obj["name"] == name:
+                return obj
         return None
 
     def get_names(self):
@@ -96,13 +99,15 @@ class UnknownObjectDatabase(object):
 
 if __name__ == '__main__':
     db = UnknownObjectDatabase()
-    print db.get_names()
-    print db.get_properties("mochi", "kitchen shelf")
+    print "Names:", db.get_names()
+    print "Prop for mochi:", db.get_properties("mochi", "kitchen shelf")
     db.add_object("georgia",
                   {"color": "blue",
                    "volume": "short",
                    "primitive": "circle"},
                   "fridge")
-    print db.get_names()
-    print db.get_properties("apple", "kitchen table")
+    print "Added georgia"
+    print "Names:", db.get_names()
+    print "Objects:", db.objects
+    print "Prop for georgia", db.get_properties("georgia", "")
 

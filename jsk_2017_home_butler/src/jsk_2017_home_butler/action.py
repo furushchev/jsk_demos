@@ -22,6 +22,16 @@ class Action(object):
             fmt += ">"
         return fmt
 
+    def __repr__(self):
+        try:
+            fmt = self.str_format.format(name=self.name, **self.arguments)
+        except:
+            fmt = "<Action %s" % self.ac_name
+            for t, v in self.arguments.items():
+                fmt += " %s=%s" % (t, v)
+            fmt += ">"
+        return fmt
+
     @property
     def missing_arguments(self):
         return [t for t, v in self.arguments.items() if not v]

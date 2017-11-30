@@ -33,6 +33,9 @@ class NaturalLanguageInference(object):
             "~graph_path", os.path.join(PKGDIR, "data", "graph.yaml"))
         self.load_from_yaml(graph_path)
 
+        self.threshold = 0.7
+        self.replace_operator = True
+
     def load_from_yaml(self, path):
         with open(path, "r") as f:
             data = yaml.load(f)
@@ -92,11 +95,15 @@ class NaturalLanguageInference(object):
             nl += " " + act
         obj = self.get_result("object", evidence, inferred, threshold)
         if obj:
-            nl += " " + obj
+            nl += " the " + obj
         else:
+            appended_the = False
             for anno in filter(lambda a: a["type"] == "object", self.annotators):
                 result = self.get_result(anno["name"], evidence, inferred, threshold)
                 if result:
+                    if not appended_the:
+                        nl += " the"
+                        appended_the = True
                     nl += " " + result
 
             cls = self.get_result("class", evidence, inferred, threshold)
@@ -107,9 +114,20 @@ class NaturalLanguageInference(object):
 
         face = self.get_result("face", evidence, inferred, threshold)
         if face:
-            nl += " to " + face
+            if self.replace_operator:
+                nl += " to me"
+            else:
+                nl += " to " + face
 
         return nl
+
+    def infer_sentence(self, sentence):
+        evidence = self.parse_nl(sentence)
+        if not evidence:
+            return sentence
+        inferred = self.infer(evidence)
+        result = self.get_nl(evidence, inferred, self.threshold)
+        return str(result)
 
 
 if __name__ == '__main__':
