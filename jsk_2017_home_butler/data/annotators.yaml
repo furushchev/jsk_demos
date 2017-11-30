@@ -1,0 +1,35 @@
+annotators:
+  - name: color
+    type: object
+    labels:
+    - red
+    - yellow
+    - green
+    - blue
+    - white
+    - black
+  - name: shape
+    type: object
+    labels:
+    - circle
+    - box
+  - name: volume
+    type: object
+    labels:
+    - small
+    - short
+    - big
+    - tall
+  - name: ssd
+    type: object
+    labels:
+    - wanda
+    - georgia
+    - boss
+  - name: face
+    type: person
+    labels:
+    - furushchev
+    - iory
+    - k-okada
+    - otsubo

@@ -7,6 +7,7 @@ import operator
 import os
 import rospkg
 import rospy
+from textblob import TextBlob
 import yaml
 
 from libpgm.discretebayesiannetwork import DiscreteBayesianNetwork
@@ -30,20 +31,23 @@ class NaturalLanguageInference(object):
 
         graph_path = rospy.get_param(
             "~graph_path", os.path.join(PKGDIR, "data", "graph.yaml"))
-        self.sample_num = rospy.get_param("~sample_num", 10000)
-        self.network, self.annotators = self.load_network(graph_path)
+        self.load_from_yaml(graph_path)
 
-    def load_network(self, path):
+    def load_from_yaml(self, path):
         with open(path, "r") as f:
             data = yaml.load(f)
 
+        # network
         skel = GraphSkeleton()
         nd = NodeData()
         skel.V = data["V"]
         skel.E = [[e["from"], e["to"]] for e in data["E"]]
         nd.Vdata = data["Vdata"]
         skel.toporder()
-        return DiscreteBayesianNetwork(skel, nd), data["annotators"]
+        self.network = DiscreteBayesianNetwork(skel, nd)
+
+        # annotators
+        self.annotators = data["annotators"]
 
     def infer(self, evidence):
         var = list(set(self.network.V) - set(evidence.keys()))
@@ -66,9 +70,23 @@ class NaturalLanguageInference(object):
 
         return str()
 
+    def parse_nl(self, sentence):
+        variables = {k: v["vals"] for k, v in self.network.Vdata.items()}
+        data = dict()
+        for w in TextBlob(sentence).words:
+            w = w.singularize()
+            for v, vs in variables.items():
+                if w.lower() in vs:
+                    data.update({v:w.lower()})
+                    break
+                elif w.lemma.lower() in vs:
+                    data.update({v:w.lemma.lower()})
+                    break
+        return data
+
     def get_nl(self, evidence, inferred, threshold=0.8):
         nl = str()
-        # action
+
         act = self.get_result("action", evidence, inferred, threshold)
         if act:
             nl += " " + act
@@ -91,16 +109,16 @@ class NaturalLanguageInference(object):
         if face:
             nl += " to " + face
 
-        print nl
+        return nl
 
 
 if __name__ == '__main__':
-    evidence = {
-        "face": "furushchev",
-        "class": "coffee",
-    }
-
     n = NaturalLanguageInference()
-    inferred = n.infer(evidence)
-    n.get_nl(evidence, inferred, 0.7)
+    sentence = "I'm furushchev. Coffees, please"
 
+    print sentence
+    evidence = n.parse_nl(sentence)
+    print "=>", evidence
+    inferred = n.infer(evidence)
+    result = n.get_nl(evidence, inferred, 0.6)
+    print "=>", result
