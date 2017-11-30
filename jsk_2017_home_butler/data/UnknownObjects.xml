@@ -8,33 +8,26 @@
     <property type="color" value="white"/>
     <property type="volume" value="small"/>
   </object>
+  <object defaultLocation="" name="manju">
+    <property type="color" value="red"/>
+    <property type="volume" value="small"/>
+  </object>
+  <object defaultLocation="living drawer" name="georgia">
+    <property type="color" value="blue"/>
+    <property type="volume" value="short"/>
+  </object>
+  <object defaultLocation="fridge" name="boss">
+    <property type="color" value="red"/>
+    <property type="volume" value="short"/>
+  </object>
   <object defaultLocation="kitchen table" name="apple">
     <property type="volume" value="small"/>
     <property type="primitive" value="circle"/>
     <property type="color" value="red"/>
   </object>
-  <object defaultLocation="" name="manju">
-    <property type="color" value="red"/>
-    <property type="volume" value="small"/>
-  </object>
-  <object defaultLocation="" name="georgia">
-    <property type="color" value="red"/>
-    <property type="volume" value="small"/>
-  </object>
-  <object defaultLocation="living drawer" name="georgia">
-    <property type="color" value="red"/>
-    <property type="volume" value="small"/>
-  </object>
-  <object defaultLocation="" name="boss">
-    <property type="color" value="red"/>
-    <property type="volume" value="small"/>
-  </object>
-  <object defaultLocation="living drawer" name="boss">
-    <property type="color" value="red"/>
-    <property type="volume" value="small"/>
-  </object>
-  <object defaultLocation="fridge" name="boss">
-    <property type="color" value="red"/>
-    <property type="volume" value="small"/>
+  <object defaultLocation="fridge" name="georgia">
+    <property type="volume" value="short"/>
+    <property type="primitive" value="circle"/>
+    <property type="color" value="blue"/>
   </object>
 </objects>

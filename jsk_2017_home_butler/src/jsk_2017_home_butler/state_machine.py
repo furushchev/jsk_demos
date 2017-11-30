@@ -8,7 +8,7 @@ import rospy
 from smach import StateMachine
 from smach_ros import SimpleActionState
 
-from jsk_2017_home_butler.utils import camel_to_snake
+from jsk_2017_home_butler.utilities import camel_to_snake
 from jsk_2017_home_butler.actions import PRIMITIVE_ACTIONS
 from jsk_2017_home_butler.actions import ListenCommandAction
 from jsk_2017_home_butler.actions import WaitForCommandAction

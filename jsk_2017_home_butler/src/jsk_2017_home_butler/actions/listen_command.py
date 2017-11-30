@@ -13,7 +13,8 @@ from jsk_2017_home_butler.interpolator import CommandInterpolateError
 from jsk_2017_home_butler.interpolator import UnknownSymbolError
 from jsk_2017_home_butler.interpolator import SymbolPropertyMissingError
 from jsk_2017_home_butler.unknown_object_database import UnknownObjectDatabase
-from jsk_2017_home_butler.utils import SpeechMixin
+from jsk_2017_home_butler.nl_inference import NaturalLanguageInference
+from jsk_2017_home_butler.utilities import SpeechMixin
 
 
 class ListenCommandAction(State, SpeechMixin):
@@ -24,6 +25,8 @@ class ListenCommandAction(State, SpeechMixin):
         self.interpolator = CommandInterpolator()
 
         self.action_loader = ActionLoader()
+
+        self.nl_inference = NaturalLanguageInference()
 
         State.__init__(self,
                        outcomes=['succeeded', 'failed'],
@@ -56,6 +59,25 @@ class ListenCommandAction(State, SpeechMixin):
             return None
 
         return actions
+
+    def ask_location(self, action=None, name=None):
+        if action is not None:
+            q = "Where should I %s" % action
+            if name is not None:
+                q += " for %s" % name
+        else:
+            if name is None:
+                raise ValueError("object name to be asked not found")
+            q = "Where is %s located" % name
+        answer = self.ask(q, grammar="gpsr")
+        return answer
+
+    def ask_object(self, name):
+        if name is None:
+            raise ValueError("object name is not found")
+        q = "What is %s" % name
+        answer = self.ask(q, grammar="gpsr")
+        
 
     def interpolate(self, actions):
         while True:

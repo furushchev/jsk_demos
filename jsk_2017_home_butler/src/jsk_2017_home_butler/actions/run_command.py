@@ -5,8 +5,8 @@
 import copy
 import rospy
 from smach import State
-from jsk_2017_home_butler.utils import SpeechMixin
-from jsk_2017_home_butler.utils import snake_to_camel
+from jsk_2017_home_butler.utilities import SpeechMixin
+from jsk_2017_home_butler.utilities import snake_to_camel
 from jsk_2017_home_butler.actions import PRIMITIVE_ACTIONS
 
 

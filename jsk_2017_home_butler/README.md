@@ -41,7 +41,8 @@ jsk_2017_home_butler
     
         ```bash
         cd /path/to/g2p
-        sudo pip install -U .
+        python setup.py build_ext
+        sudo python setup.py install
         ```
 
 2. Download dictionary

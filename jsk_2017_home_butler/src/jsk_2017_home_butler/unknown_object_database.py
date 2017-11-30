@@ -77,7 +77,7 @@ class UnknownObjectDatabase(object):
         # assert location
         found_loc = False
         for loc in self.resource_loader.locations:
-            if location in loc["location"]:
+            if len(location) > 0 and location in loc["location"]:
                 found_loc = True
                 break
         if not found_loc:
@@ -98,11 +98,11 @@ if __name__ == '__main__':
     db = UnknownObjectDatabase()
     print db.get_names()
     print db.get_properties("mochi", "kitchen shelf")
-    db.add_object("apple",
-                  {"color": "red",
-                   "volume": "small",
+    db.add_object("georgia",
+                  {"color": "blue",
+                   "volume": "short",
                    "primitive": "circle"},
-                  "kitchen table")
+                  "fridge")
     print db.get_names()
     print db.get_properties("apple", "kitchen table")
 

@@ -6,29 +6,140 @@ import rospkg
 import os
 import sys
 import numpy as np
+import pickle
 from sklearn.feature_extraction.text import TfidfVectorizer
 import rospy
-try:
-    import pronouncing
-except:
-    print >> sys.stderr, "'pronouncing' library not found. Please run 'sudo pip install pronouncing'"
-    exit(1)
-try:
-    import splitter
-except:
-    print >> sys.stderr, "'compound-word-splitter' library not found. Please run 'sudo pip install compound-word-splitter pyenchant'"
-    exit(1)
+
 
 PKG_PATH = rospkg.RosPack().get_path("jsk_2017_home_butler")
 
+
+class Phonemizer(object):
+    def phonemize(self, sentence):
+        raise NotImplementedError()
+
+
+class PronouncingPhonemizer(Phonemizer):
+    def __init__(self, debug=True):
+        super(PronouncingPhonemizer, self).__init__()
+
+        self.debug = debug
+
+        self.load_modules()
+
+        dict_path = rospy.get_param("~phoneme_dict_path", None)
+        if dict_path is None:
+            dict_path = os.path.join(PKG_PATH, "data", "phonemes.txt")
+
+        self.dict = self.load_dicts(dict_path)
+        rospy.loginfo("loaded %d entities" % len(self.dict))
+
+    def load_modules(self):
+        global pronouncing
+        global splitter
+        try:
+            import pronouncing
+        except:
+            print >> sys.stderr, "'pronouncing' library not found. Please run 'sudo pip install pronouncing'"
+            exit(1)
+        try:
+            import splitter
+        except:
+            print >> sys.stderr, "'compound-word-splitter' library not found. Please run 'sudo pip install compound-word-splitter pyenchant'"
+            exit(1)
+
+    def load_dicts(self, path):
+        dic = {}
+        if not os.path.exists(path):
+            raise IOError("dict %s not found" % path)
+        with open(path, 'r') as f:
+            for line in f.readlines():
+                line = line.strip()
+                if not line: continue
+                elif line[0] == '#': continue
+                if len(line.split(':')) != 2:
+                    raise ValueError("Failed to parse dict: %s" % line)
+                word, phoneme = line.split(':')
+                dic[word.strip()] = phoneme.strip()
+        rospy.loginfo("%d additional dictionary loaded" % len(dic))
+        return dic
+
+    def phonemize_word(self, word):
+        phoneme = pronouncing.phones_for_word(word)
+        if phoneme:
+            return phoneme[0]
+        elif word in self.additional_dict.keys():
+            return self.additional_dict[word]
+        else:
+            raise RuntimeError("No phoneme found: %s. Please add to additional dict." % word)
+
+    def split_sentence(self, sentence):
+        sentence = sentence.strip()
+        if sentence.find(' ') != -1:
+            return sentence.split()
+        else:
+            ss = splitter.split(sentence)
+            return ss if ss else [sentence]
+
+    def phonemize(self, sentence):
+        phonemes = []
+        try:
+            phonemes = [self.phonemize_word(sentence)]
+        except:
+            if phonemes:
+                return ' '.join(phonemes)
+            for s in self.split_sentence(sentence):
+                phoneme = self.phonemize_word(s)
+                if not phoneme:
+                    phoneme = ' '.join([self.phonemize(ss) for ss in self.split_sentence(s)])
+                phonemes.append(phoneme)
+            if self.debug:
+                print sentence, "->", ' '.join(phonemes)
+        return ' '.join(phonemes)
+
+
+class SequiturPhonemizer(Phonemizer):
+    def __init__(self, debug=True):
+        super(SequiturPhonemizer, self).__init__()
+        self.load_modules()
+
+        model_path = rospy.get_param("~phoneme_model_file", None)
+        if model_path is None:
+            model_path = os.path.join(PKG_PATH, "data", "phonemes.model")
+        assert os.path.exists(model_path), "Phonemizer model not found at %s" % model_path
+
+        print "Loading phonemizer model..."
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+        self.translator = sequitur.Translator(model)
+        del model
+
+    def load_modules(self):
+        global sequitur
+        try:
+            import sequitur
+        except:
+            print >> sys.stderr, "'sequitur' library not found. Please install sequitur G2P first."
+            exit(1)
+
+    def _phonemize_word(self, word):
+        return self.translator(word.strip())
+
+    def phonemize(self, sentence):
+        result = list()
+        for word in sentence.strip().split():
+            result += self._phonemize_word(word)
+        return ' '.join(result)
+
+
 class WordClassifier(object):
-    def __init__(self, classifier='randomforest',
-                 use_phonemes=False, additional_dict_path=None,
+    def __init__(self,
+                 classifier='randomforest',
+                 phonemizer='sequitur',
+                 use_phonemes=False,
                  debug=False):
-        if additional_dict_path is None:
-            default_path = os.path.join(PKG_PATH, "data", "phonemes.txt")
-            if os.path.exists(default_path):
-                additional_dict_path = default_path
+
+        self.debug = debug
 
         self.vectorizer = TfidfVectorizer(ngram_range=(1, 2),
                                           strip_accents='ascii',
@@ -38,16 +149,12 @@ class WordClassifier(object):
         self.classifier_name = classifier
         self.clf = None
 
-        # load additional dictionaries
-        self.additional_dict = {}
-        if additional_dict_path is not None:
-            self.additional_dict = self.load_dicts(additional_dict_path)
-
         self.commands = []
         self.phonemes = []
 
         self.use_phonemes = use_phonemes
-        self.debug = debug
+        self.phonemizer_name = phonemizer
+        self.phonemizer = None
 
     def _init_classifier(self, classifier, n_class):
         if classifier == 'randomforest':
@@ -70,54 +177,13 @@ class WordClassifier(object):
         else:
             raise RuntimeError("classifier '%s' not found" % classifier)
 
-    def load_dicts(self, path):
-        dic = {}
-        if not os.path.exists(path):
-            raise IOError("dict %s not found" % path)
-        with open(path, 'r') as f:
-            for line in f.readlines():
-                line = line.strip()
-                if not line: continue
-                elif line[0] == '#': continue
-                if len(line.split(':')) != 2:
-                    raise ValueError("Failed to parse dict: %s" % line)
-                word, phoneme = line.split(':')
-                dic[word.strip()] = phoneme.strip()
-        rospy.loginfo("%d additional dictionary loaded" % len(dic))
-        return dic
-
-    def _get_phoneme(self, word):
-        phoneme = pronouncing.phones_for_word(word)
-        if phoneme:
-            return phoneme[0]
-        elif word in self.additional_dict.keys():
-            return self.additional_dict[word]
+    def _init_phonemizer(self, name):
+        if name == 'pronouncing':
+            self.phonemizer = PronouncingPhonemizer(debug=self.debug)
+        elif name == 'sequitur':
+            self.phonemizer = SequiturPhonemizer(debug=self.debug)
         else:
-            raise RuntimeError("No phoneme found: %s. Please add to additional dict." % word)
-
-    def _split_sentence(self, sentence):
-        sentence = sentence.strip()
-        if sentence.find(' ') != -1:
-            return sentence.split()
-        else:
-            ss = splitter.split(sentence)
-            return ss if ss else [sentence]
-
-    def _get_phonemes(self, sentence):
-        phonemes = []
-        try:
-            phonemes = [self._get_phoneme(sentence)]
-        except:
-            if phonemes:
-                return ' '.join(phonemes)
-            for s in self._split_sentence(sentence):
-                phoneme = self._get_phoneme(s)
-                if not phoneme:
-                    phoneme = ' '.join([self._get_phonemes(ss) for ss in self._split_sentence(s)])
-                phonemes.append(phoneme)
-            if self.debug:
-                print sentence, "->", ' '.join(phonemes)
-        return ' '.join(phonemes)
+            raise RuntimeError("Phonemizer '%s' not found" % name)
 
     def _sanitize_command(self, command):
         command = command.replace('-', ' ')
@@ -134,7 +200,9 @@ class WordClassifier(object):
             self._init_classifier(self.classifier_name, len(self.commands))
 
         if self.use_phonemes:
-            self.phonemes = [self._get_phonemes(c) for c in commands]
+            if self.phonemizer is None:
+                self._init_phonemizer(self.phonemizer_name)
+            self.phonemes = [self.phonemizer.phonemize(c) for c in commands]
             input_data = self.phonemes
         else:
             input_data = commands
@@ -150,7 +218,7 @@ class WordClassifier(object):
                 return command
         command = self._sanitize_command(command)
         if self.use_phonemes:
-            input_data = self._get_phonemes(command)
+            input_data = self.phonemizer.phonemize(command)
         else:
             input_data = command
         x = self.vectorizer.transform([input_data])
