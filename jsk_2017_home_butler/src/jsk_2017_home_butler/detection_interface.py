@@ -182,9 +182,6 @@ class PeopleDetector(object):
 
     def callback(self, poses, faces):
         for pose, face in zip(poses.poses, faces.faces):
-            if not face.label:
-                continue
-
             rot = T.euler_from_quaternion((
                 pose.orientation.x,
                 pose.orientation.y,
@@ -192,18 +189,21 @@ class PeopleDetector(object):
                 pose.orientation.w))
             d = angles.shortest_angular_distance(rot[0], -math.pi)
             if abs(d) < self.threshold:
-                self.people.append(face.label)
+                if face.label:
+                    self.known.append(face.label)
+                else:
+                    self.unknown.append("someone")
 
     def find_person(self, duration=10):
-        self.people = list()
+        self.known, self.unknown = list(), list()
         self.subscribe()
         rate = rospy.Rate(10)
         for i in range(int(duration * 10)):
-            if self.people:
+            if self.known:
                 break
             rate.sleep()
         self.unsubscribe()
-        return self.people
+        return self.known + self.unknown
 
 
 if __name__ == '__main__':

@@ -15,6 +15,7 @@ from jsk_2017_home_butler.interpolator import SymbolPropertyMissingError
 from jsk_2017_home_butler.unknown_object_database import UnknownObjectDatabase
 from jsk_2017_home_butler.nl_inference import NaturalLanguageInference
 from jsk_2017_home_butler.utilities import SpeechMixin
+from jsk_2017_home_butler.detection_interface import PeopleDetector
 
 
 class ListenCommandAction(State, SpeechMixin):
@@ -133,8 +134,17 @@ class ListenCommandAction(State, SpeechMixin):
         return actions
 
     def execute(self, userdata=None, query=None):
-        self.say("Hi!")
-        rospy.sleep(0.3)
+        detector = PeopleDetector()
+        person = detector.find_person()
+        if not person:
+            return False
+
+        person = person[0]
+
+        if person == "someone":
+            self.say("Hi!")
+        else:
+            self.say("Hi, %s!" % person)
 
         if query is None:
             query = self.listen_query()
