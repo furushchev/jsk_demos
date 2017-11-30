@@ -133,7 +133,7 @@ class ListenCommandAction(State, SpeechMixin):
         detector = PeopleDetector()
         person = detector.find_person()
         if not person:
-            return False
+            return 'failed'
 
         person = person[0]
 
@@ -147,7 +147,12 @@ class ListenCommandAction(State, SpeechMixin):
         if not query:
             return 'failed'
 
-        query = self.nl_inference.infer_sentence(query)
+        if person != "someone":
+            evidence = {"face": person}
+        else:
+            evidence = dict()
+
+        query = self.nl_inference.infer_sentence(query, evidence)
 
         self.say("You said: %s" % query)
         userdata.query = query

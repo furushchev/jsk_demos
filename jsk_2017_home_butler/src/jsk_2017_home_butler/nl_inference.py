@@ -121,8 +121,8 @@ class NaturalLanguageInference(object):
 
         return nl
 
-    def infer_sentence(self, sentence):
-        evidence = self.parse_nl(sentence)
+    def infer_sentence(self, sentence, evidence={}):
+        evidence.update(self.parse_nl(sentence))
         if not evidence:
             return sentence
         inferred = self.infer(evidence)
@@ -131,12 +131,17 @@ class NaturalLanguageInference(object):
 
 
 if __name__ == '__main__':
+    import pprint
+
     n = NaturalLanguageInference()
-    sentence = "I'm furushchev. Coffees, please"
+    # sentence = "I'm furushchev. Coffees, please"
+    sentence = "Coffee, please"
 
     print sentence
     evidence = n.parse_nl(sentence)
     print "=>", evidence
     inferred = n.infer(evidence)
+    print "=>"
+    pprint.pprint(inferred)
     result = n.get_nl(evidence, inferred, 0.6)
     print "=>", result
