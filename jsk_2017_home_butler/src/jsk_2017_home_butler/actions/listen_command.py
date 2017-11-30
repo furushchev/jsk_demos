@@ -60,15 +60,15 @@ class ListenCommandAction(State, SpeechMixin):
 
         return actions
 
-    def ask_location(self, action=None, name=None):
+    def ask_location(self, action=None, object=None):
         if action is not None:
             q = "Where should I %s" % action
-            if name is not None:
-                q += " for %s" % name
+            if object is not None:
+                q += " for %s" % object
         else:
-            if name is None:
-                raise ValueError("object name to be asked not found")
-            q = "Where is %s located" % name
+            if object is None:
+                raise ValueError("object or action name is required")
+            q = "Where is %s located" % object
         answer = self.ask(q, grammar="gpsr")
         return answer
 
@@ -77,7 +77,8 @@ class ListenCommandAction(State, SpeechMixin):
             raise ValueError("object name is not found")
         q = "What is %s" % name
         answer = self.ask(q, grammar="gpsr")
-        return answer
+        prop = self.nl_inference.parse_nl(answer)
+        return prop
 
     def interpolate(self, actions):
         while True:
@@ -93,23 +94,18 @@ class ListenCommandAction(State, SpeechMixin):
                 valid = e.valid_commands
                 cmd = e.command
                 if "where" in str(e):
-                    q = "Where should I do %s" % cmd.name
-                    key = "location"
-                    rospy.loginfo("q: %s" % q)
-                    answer = self.ask(q, grammar="gpsr")
-                    rospy.loginfo("a: %s" % answer)
+                    location = self.ask_location(action=cmd.name)
                     # answer = "living drawer"  # FIXME: temp fix for testing
-                    cmd.add_argument(key, answer)
+                    cmd.add_argument(key, location)
                 elif "what" in str(e):
-                    q = "What is %s?" % cmd.arguments["object"]
-                    rospy.loginfo("q: %s" % q)
-                    answer = self.ask(q, grammar="gpsr")
-                    rospy.loginfo("a: %s" % answer)
-                    # TODO: ask location if not provided
-                    # TODO: need parse props for the object
-                    props = {"color": "red", "volume": "small"} # FIXME: temp fix for testing
+                    props = self.ask_object(cmd.arguments["object"])
+                    # props = {"color": "red", "volume": "short"} # FIXME: temp fix for testing
+                    if cmd.arguments["location"]:
+                        location = cmd.arguments["location"]
+                    else:
+                        location = self.ask_location(object=cmd.arguments["object"])
                     db = UnknownObjectDatabase()
-                    db.add_object(cmd.arguments["object"], props, cmd.arguments["location"])
+                    db.add_object(cmd.arguments["object"], props, location)
                 # update actions
                 rospy.loginfo("valid: %s" % valid)
                 rospy.loginfo("cmd: %s" % cmd)
@@ -121,7 +117,7 @@ class ListenCommandAction(State, SpeechMixin):
                 self.say("Sorry, %s" % str(e))
                 cmd = e.command
                 if "where" in str(e):
-                    loc = self.ask("Where is %s located?" % cmd.arguments["object"], grammar="gpsr")
+                    loc = self.ask_location(object=cmd.arguments["object"])
                     cmd.add_argument("location", loc)
                 actions = e.valid_commands + [cmd] + e.all_commands[1:]
             except CommandInterpolateError as e:
