@@ -221,6 +221,8 @@ class WordClassifier(object):
             input_data = self.phonemizer.phonemize(command)
         else:
             input_data = command
+        if self.debug:
+            print "input data:", input_data
         x = self.vectorizer.transform([input_data])
         proba = self.clf.predict_proba(x.toarray())[0]
 
@@ -288,7 +290,8 @@ if __name__ == '__main__':
 
         print
         print "--- inferring ---"
-        for word in ["manju", "green T", "coke"]:
+        for word in ["manju", "green T", "coke", "wanda"]:
+            print "!!!!!!!!!!!!! %s !!!!!!!!!!!!!!!" % word
             result = i.infer(word)
             print "infer:", word, "->", result
 

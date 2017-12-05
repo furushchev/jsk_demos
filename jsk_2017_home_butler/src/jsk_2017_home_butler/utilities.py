@@ -24,7 +24,6 @@ _ACTION_CLIENTS = {}
 class SpeechMixin(object):
     def say(self, text, lang="", wait=True, timeout=10, ns=None):
         rospy.loginfo(text)
-        return True
         global _ACTION_CLIENTS
         msg = SoundRequest(
             sound=SoundRequest.SAY,
@@ -34,9 +33,11 @@ class SpeechMixin(object):
 
         if ns is None:
             if lang == "ja":
-                ns = "robotsound_jp"
+                ns = "/robotsound_jp"
             else:
-                ns = "robotsound"
+                ns = "/robotsound_gtts"
+                lang = "en"
+
         if ns not in _ACTION_CLIENTS:
             _ACTION_CLIENTS[ns] = actionlib.SimpleActionClient(ns, SoundRequestAction)
         ac = _ACTION_CLIENTS[ns]
@@ -64,6 +65,7 @@ class SpeechMixin(object):
         self.speech_msg = msg.texts
 
     def listen_topic(self, duration=3.0, retry=2, choices=None):
+        rospy.loginfo("listening")
         self.speech_msg = None
         sub = rospy.Subscriber("/Tablet/voice", VoiceMessage,
                                self._voice_callback, queue_size=1)
@@ -117,12 +119,14 @@ class SpeechMixin(object):
 
         ns = ns or "speech_recognition"
 
+        # TEMP
+        return self.listen_topic(duration=duration, retry=retry, choices=choices)
+
         try:
             rospy.wait_for_service(ns, timeout=1)
         except rospy.ROSException as e:
             rospy.logerr("service /%s not yet advertised?" % ns)
             return raw_input("speech?:")
-            # return self.listen_topic(duration=duration, retry=retry, choices=choices)
 
         sr = rospy.ServiceProxy(ns, SpeechRecognition)
 
