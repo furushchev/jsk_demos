@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
     n = NaturalLanguageInference()
     # sentence = "I'm furushchev. Coffees, please"
-    sentence = "Coffee, please"
+    sentence = "boss, please"
 
     print sentence
     evidence = n.parse_nl(sentence)

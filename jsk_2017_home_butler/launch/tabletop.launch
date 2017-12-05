@@ -139,7 +139,7 @@
           machine="$(arg machine)">
       <remap from="~input" to="euclidean_clustering_decomposer/boxes"/>
       <rosparam>
-        tall_threshold: 0.6
+        tall_threshold: 0.7
         big_threshold: 0.00027
       </rosparam>
     </node>
@@ -168,7 +168,7 @@
 
     <rosparam subst_value="true"
               ns="multi_plane_segmentation">
-      min_size: 1000
+      min_size: 700
       max_curvature: 0.01
       estimate_normal: true
       publish_normal: true
