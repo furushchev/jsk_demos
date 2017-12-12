@@ -20,7 +20,7 @@
         machine="c1" />
 
   <node pkg="sound_play" type="soundplay_node.py" name="robotsound_gtts"
-        machine="c1">
+        machine="c1" respawn="$(arg respawn)">
     <remap from="sound_play" to="robotsound_gtts" />
     <remap from="robotsound" to="robotsound_gtts" />
     <env name="PATH" value="$(find ros_gtts)/bin:$(env PATH)" />
@@ -119,8 +119,8 @@
     </node>
 
     <rosparam ns="depth_to_mask">
-      z_near: 1.0
-      z_far: 3.0
+      z_near: 1.5
+      z_far: 2.5
     </rosparam>
 
     <rosparam ns="apply_mask">
