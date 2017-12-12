@@ -153,7 +153,7 @@
 
     <node name="people_class_visualizer"
           pkg="jsk_rviz_plugins" type="classification_result_visualizer.py">
-      <remap from="~input/classes" to="people_tracker/output" />
+      <remap from="~input/classes" to="people_tracker/output/attention" />
       <remap from="~input/poses"   to="face_pose_estimation/output/pose" />
       <param name="text_size" value="0.1" />
     </node>
