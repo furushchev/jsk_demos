@@ -138,5 +138,24 @@
       model_threshold: 4300.0
       data_dir: /home/furushchev/.ros/opencv_apps/face_data
     </rosparam>
+
+    <node name="people_tracker" pkg="jsk_2017_home_butler" type="people_tracker.py"
+          output="screen">
+      <remap from="~input/pose" to="face_pose_estimation/output/pose" />
+      <remap from="~input/face" to="face_recognition/output" />
+      <rosparam>
+        fixed_frame_id: odom_combined
+        distance_threshold: 0.25
+        timeout_threshold: 3.0
+        face_recognition_threshold: 4300.0
+      </rosparam>
+    </node>
+
+    <node name="people_class_visualizer"
+          pkg="jsk_rviz_plugins" type="classification_result_visualizer.py">
+      <remap from="~input/classes" to="people_tracker/output" />
+      <remap from="~input/poses"   to="face_pose_estimation/output/pose" />
+      <param name="text_size" value="0.1" />
+    </node>
   </group>
 </launch>
