@@ -106,6 +106,7 @@ class PeopleTracker(ConnectionBasedTransport):
         self.distance_threshold = rospy.get_param("~distance_threshold", 0.1)
         self.timeout_threshold = rospy.get_param("~timeout_threshold", 3.0)
         self.face_recognition_threshold = rospy.get_param("~face_recognition_threshold", 4300.0)
+        self.unknown_name_prefix = rospy.get_param("~unknown_name_prefix", "unknown")
 
         self.tfl = tf2_ros.BufferClient("/tf2_buffer_server")
         ok = self.tfl.wait_for_server(timeout=rospy.Duration(10))
@@ -164,17 +165,32 @@ class PeopleTracker(ConnectionBasedTransport):
 
         for pose, face in zip(poses.poses, faces.faces):
             pose = PoseStamped(header=poses.header, pose=pose)
-            near_name, dist = self.nearest_person(pose)
+
+            if not pose.header.frame_id != self.fixed_frame_id:
+                try:
+                    pose = self.tfl.transform(pose, self.fixed_frame_id)
+                except:
+                    continue
+
+            dups = list()
+            for n, p in self.people.items():
+                d = pose_distance(pose, p)
+                if d < self.distance_threshold:
+                    dups.append((n, p))
+                    del self.people[n]
+
             if face.label:
                 name = face.label
                 proba = (self.face_recognition_threshold - face.confidence) / self.face_recognition_threshold
-                if near_name is not None and dist < self.distance_threshold:
-                    rospy.logdebug("%s -> %s" % (near_name, name))
-                    del self.people[near_name]
-            elif near_name is not None and dist < self.distance_threshold:
-                name = near_name
+                rospy.logdebug("%s -> %s (label)" % ([n[0] for n in dups], name))
+            elif dups:
+                known_names = filter(lambda n: not n[0].startswith(self.unknown_name_prefix), dups)
+                if known_names:
+                    name = known_names[0][0]
+                else:
+                    name = dups[0][0]
                 proba = 0.5
-                rospy.logdebug("None -> %s" % name)
+                rospy.logdebug("%s -> %s" % ([n[0] for n in dups], name))
             else:
                 name = self.generate_name()
                 rospy.logdebug("None -> %s (new)" % name)
@@ -188,24 +204,9 @@ class PeopleTracker(ConnectionBasedTransport):
         self.last_received = poses.header.stamp
 
     def generate_name(self):
-        s = "unknown%d" % self.counter
+        s = self.unknown_name_prefix + str(self.counter)
         self.counter += 1
         return s
-
-    def nearest_person(self, pose):
-        if not pose.header.frame_id != self.fixed_frame_id:
-            pose1 = self.tfl.transform(pose, self.fixed_frame_id)
-        else:
-            pose1 = pose
-
-        min_distance = 1000
-        min_person = None, None
-        for name, pose2 in self.people.items():
-            d = pose_distance(pose1, pose2)
-            if d < min_distance:
-                min_distance = d
-                min_person = (name, d)
-        return min_person
 
 
 if __name__ == '__main__':
