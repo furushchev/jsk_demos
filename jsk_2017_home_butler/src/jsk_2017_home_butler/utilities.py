@@ -23,8 +23,8 @@ def camel_to_snake(text):
 _ACTION_CLIENTS = {}
 class SpeechMixin(object):
     def say(self, text, lang="", wait=True, timeout=10, ns=None):
-        rospy.loginfo(text)
         global _ACTION_CLIENTS
+        rospy.loginfo("Robot says: %s" % text)
         msg = SoundRequest(
             sound=SoundRequest.SAY,
             command=SoundRequest.PLAY_ONCE,
@@ -42,7 +42,7 @@ class SpeechMixin(object):
             _ACTION_CLIENTS[ns] = actionlib.SimpleActionClient(ns, SoundRequestAction)
         ac = _ACTION_CLIENTS[ns]
         if not ac.wait_for_server(rospy.Duration(1)):
-            rospy.logwarn("Action server /%s not found." % ns)
+            rospy.logwarn("Action server %s not found." % ns)
             del _ACTION_CLIENTS[ns]
 
             pub = rospy.Publisher(ns, SoundRequest, queue_size=1)
@@ -52,8 +52,6 @@ class SpeechMixin(object):
             sleep_length = len(msg.arg) * 0.1 + 0.2
             if wait:
                 rospy.sleep(sleep_length)
-            if pub.get_num_connections() == 0:
-                rospy.loginfo("Robot said: %s" % msg.arg)
         else:
             goal = SoundRequestGoal(sound_request=msg)
             ac.send_goal(goal)
