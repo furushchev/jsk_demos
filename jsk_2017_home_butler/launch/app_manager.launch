@@ -1,0 +1,17 @@
+<launch>
+  <arg name="robot_type" default="pr2" />
+  <arg name="robot_name" default="pr1012" />
+  <arg name="robot_icon" default="jsk_pr2_startup/app.png" />
+  <arg name="robot_description" default="JSK PR2 1012" />
+  <arg name="rapp_package_whitelist" default="[rocon_apps]" />
+  <arg name="rapp_package_blacklist" default="[]" />
+
+  <arg name="interactions" default="true" />
+  <arg name="interactions_list" default="[]" />
+
+  <arg name="zeroconf" default="true" />
+
+
+  <include file="$(find rocon_app_manager)/launch/standalone.launch"
+           pass_all_args="true" />
+</launch>
