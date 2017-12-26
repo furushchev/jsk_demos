@@ -26,6 +26,7 @@ add_action_files(FILES
   Place.action
   FindObject.action
   Speak.action
+  RunTask.action
 )
 
 ## Generate added messages and services with any dependencies listed here

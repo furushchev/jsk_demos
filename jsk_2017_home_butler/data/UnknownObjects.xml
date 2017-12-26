@@ -26,4 +26,10 @@
     <property type="primitive" value="circle"/>
     <property type="color" value="blue"/>
   </object>
+  <object defaultLocation="fridge" name="wanda">
+    <property type="color" value="red"/>
+    <property type="volume" value="short"/>
+    <property type="shape" value="circle"/>
+    <property type="class" value="coffee"/>
+  </object>
 </objects>

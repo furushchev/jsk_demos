@@ -3,6 +3,7 @@
 ;; Author: furushchev <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
 (ros::load-ros-manifest "jsk_2017_home_butler")
+(ros::load-ros-manifest "gpd")
 
 (defparameter *init-pos* nil)
 

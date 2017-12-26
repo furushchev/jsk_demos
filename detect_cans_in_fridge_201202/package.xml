@@ -17,17 +17,6 @@
 
   <!-- Dependencies needed to compile this package. -->
   <build_depend>roseus</build_depend>
-  <build_depend>jsk_perception</build_depend>
-  <build_depend>jsk_pcl_ros</build_depend>
-  <build_depend>pr2_navigation_self_filter</build_depend>
-  <build_depend>jsk_pr2_startup</build_depend>
-  <build_depend>snap_map_icp</build_depend>
-  <build_depend>jsk_demo_common</build_depend>
-  <build_depend>pr2eus</build_depend>
-  <build_depend>jsk_tools</build_depend>
-  <build_depend>pr2_gripper_sensor_msgs</build_depend>
-  <build_depend>pcl_msgs</build_depend>
-  <build_depend>posedetection_msgs</build_depend>
 
   <!-- Dependencies needed after this package is compiled. -->
   <run_depend>roseus</run_depend>
