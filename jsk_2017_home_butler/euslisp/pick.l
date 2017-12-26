@@ -16,6 +16,7 @@
     ;; TODO: debug
     (setq *type* (or obj "georgia"))
     (open-fridge-door :use-arm :larm)
+    (unix:sleep 5)
     (grasp-can :use-arm :larm)
     (close-fridge :use-arm :larm)
 

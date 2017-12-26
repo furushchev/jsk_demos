@@ -10,7 +10,15 @@
 
   <include file="$(find pr2_machine)/pr2.machine" />
 
-  <group ns="tabletop">
+  <!--
+        - name: bilateral_filter
+          type: jsk_pcl/BilateralFilter
+          remappings:
+          - from: ~input
+            to: pass_through/output
+  -->
+
+  <group ns="detect_cans">
     <node name="manager"
           pkg="jsk_topic_tools" type="standalone_complexed_nodelet"
           output="screen" machine="$(arg machine)">
@@ -27,7 +35,7 @@
           - from: ~input
             to: throttle/output
         - name: bilateral_filter
-          type: jsk_pcl/BilateralFilter
+          type: jsk_topic_tools/Relay
           remappings:
           - from: ~input
             to: pass_through/output
@@ -117,8 +125,8 @@
 
     <rosparam ns="pass_through" subst_value="true">
       filter_field_name: z
-      filter_limit_min: 0.60
-      filter_limit_max: 1.20
+      filter_limit_min: 1.10
+      filter_limit_max: 1.30
       filter_limit_negative: false
       keep_organized: true
       input_frame: $(arg base_frame_id)
@@ -131,6 +139,7 @@
     </rosparam>
 
     <rosparam ns="multi_plane_segmentation" subst_value="true">
+      min_size: 1000
       max_curvature: 0.01
       estimate_normal: true
       vital_rate: $(arg vital_rate)
@@ -164,7 +173,7 @@
       use_sensor_frame: true
       sensor_frame: $(arg sensor_frame_id)
       min_height: 0.01
-      max_height: 0.4
+      max_height: 0.135
       vital_rate: $(arg vital_rate)
     </rosparam>
 
@@ -174,8 +183,8 @@
     </rosparam>
 
     <rosparam ns="euclidean_clustering" subst_value="true">
-      tolerance: 0.02
-      min_size: 1000
+      tolerance: 0.01
+      min_size: 100
       max_size: 100000
       vital_rate: $(arg vital_rate)
     </rosparam>
@@ -222,6 +231,18 @@
       compare_policy: 0
       vital_rate: $(arg vital_rate)
     </rosparam>
+
+    <node name="color_histogram_detector"
+          pkg="detect_cans_in_fridge_201202" type="color_histogram_detector.py"
+          machine="$(arg machine)">
+      <remap from="~input/boxes" to="euclidean_clustering_decomposer/boxes" />
+      <remap from="~input/classes" to="color_histogram_classifier/output" />
+      <remap from="~output" to="$(arg detection_topic)" />
+      <rosparam>
+        queue_size: 100
+        publish_tf: true
+      </rosparam>
+    </node>
 
     <node name="color_histogram_visualizer"
           pkg="jsk_pcl_ros" type="color_histogram_visualizer.py"
