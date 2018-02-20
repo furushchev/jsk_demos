@@ -160,6 +160,8 @@
   (unless (grasp-can :use-arm use-arm)
     (return-from demo))
 
+  (send *ri* :go-pos-unsafe 0.1 0 0) ;; for uchimi
+
   ;; move
 
   (unless (close-fridge :use-arm use-arm)

@@ -1,6 +1,6 @@
 <launch>
   <arg name="machine" default="c2" />
-  <arg name="cloud_topic" default="/kinect_head/depth_registered/points" />
+  <arg name="cloud_topic" default="/kinect_head/depth_predicted/points" />
   <arg name="detection_topic" default="/kinect_head/depth_registered/ObjectDetection" />
   <arg name="base_frame_id" default="base_footprint" />
   <arg name="sensor_frame_id" default="head_mount_kinect_rgb_optical_frame" />
@@ -21,11 +21,18 @@
           remappings:
           - from: ~input
             to: $(arg cloud_topic)
+        - name: attention_clipper
+          type: jsk_pcl/AttentionClipper
+          remappings:
+          - from: ~input/points
+            to: throttle/output
         - name: pass_through
-          type: pcl/PassThrough
+          type: jsk_pcl/ExtractIndices
           remappings:
           - from: ~input
             to: throttle/output
+          - from: ~indices
+            to: attention_clipper/output/point_indices
         - name: bilateral_filter
           type: jsk_pcl/BilateralFilter
           remappings:
@@ -113,12 +120,15 @@
     </rosparam>
 
     <rosparam ns="pass_through" subst_value="true">
-      filter_field_name: z
-      filter_limit_min: 0.90
-      filter_limit_max: 1.30
-      filter_limit_negative: false
       keep_organized: true
-      input_frame: $(arg base_frame_id)
+    </rosparam>
+
+    <rosparam ns="attention_clipper" subst_value="true">
+      frame_id: $(arg sensor_frame_id)
+      initial_pos: [0.1, 0.0, 1.0]
+      dimension_x: 0.7
+      dimension_y: 0.8
+      dimension_z: 0.8
     </rosparam>
 
     <rosparam ns="bilateral_filter" subst_value="true">
@@ -152,7 +162,7 @@
 
     <rosparam ns="polygon_magnifier" subst_value="true">
       use_scale_factor: true
-      magnify_scale_factor: 0.9
+      magnify_scale_factor: 0.8
       vital_rate: $(arg vital_rate)
     </rosparam>
 
@@ -161,7 +171,7 @@
       use_sensor_frame: true
       sensor_frame: $(arg sensor_frame_id)
       min_height: 0.05
-      max_height: 0.4
+      max_height: 0.45
       vital_rate: $(arg vital_rate)
     </rosparam>
 

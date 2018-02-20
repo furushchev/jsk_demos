@@ -967,6 +967,7 @@
   ;; detect cans which was indicated by ( type )
   ;;(when (not (setq cds (check-detection :type *type* :single t)))
   ;;(setq cds (check-detection :type *type* :tf-force t :timeout 30 :single t)))
+  (unix:sleep 3) ;; for uchimi
   (let (cds isgrasp)
     (cond
      ((not (send *ri* :simulation-modep)) ;; real mode
@@ -1030,6 +1031,7 @@
   (if (eq use-arm :larm) (setq rotation (- rotation)))
   ;; move-to can spot for grasping
   (move-to-can-spot :use-arm use-arm :rotation rotation :move move :pre-move pre-move)
+  (send *ri* :go-pos-unsafe -0.1 0 0) ;; for uchimi
   (grasp-can-init)
   (cond
    ((not move-only)
