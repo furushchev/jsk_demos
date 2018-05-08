@@ -1,0 +1,12 @@
+<launch>
+  <arg name="start_rviz" default="false" />
+  <arg name="wait_query" default="false" />
+  <arg name="execute" default="true" />
+  <arg name="DEMOTYPE" default="map" />
+  <arg name="app_manager" default="false" />
+  <arg name="run_behavior" default="false" />
+  <arg name="debug_view" default="false" />
+
+  <include file="$(find detect_cans_in_fridge_201202)/launch/startup.launch" pass_all_args="true"/>
+</launch>
+
