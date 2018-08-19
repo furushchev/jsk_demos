@@ -140,9 +140,11 @@
         (publish-pin-marker-array spots header))))
 
 (defun map-selected-cb (msg)
-  (setq *current-map-id*
-        (string-right-trim "_" (string-right-trim "tf"   ;; remove '_tf'
-                                                  (send msg :data))))
+  (cond
+   ((substringp "_tf_static" (send msg :data))
+    (setq *current-map-id* (subseq (send msg :data) 0 (- (length (send msg :data)) 10))))
+   ((substringp "_tf" (send msg :data))
+    (setq *current-map-id* (subseq (Send msg :data) 0 (- (length (send msg :data)) 3)))))
   (ros::ros-info "[jsk_maps/publish_spot.l] map id \"~A\" is selected." *current-map-id*))
 
 (defun main ()

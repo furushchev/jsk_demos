@@ -22,6 +22,9 @@
   <run_depend>geometry_msgs</run_depend>
   <run_depend>multi_map_server</run_depend>
   <run_depend>jsk_rviz_plugins</run_depend>
+  <run_depend>roseus</run_depend>
+  <run_depend>tf2_ros</run_depend>
+  <run_depend>tf</run_depend>
   <run_depend>visualization_msgs</run_depend>
   <test_depend>rostest</test_depend>
   <test_depend>jsk_tools</test_depend>

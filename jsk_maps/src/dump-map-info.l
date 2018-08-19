@@ -83,7 +83,13 @@ map_id: ~a"
     (with-open-file
         (fd filename :direction :output)
       (format fd "<launch>~%")
-      (format fd "  <arg name=\"launch_map_server\" default=\"true\"/>~%~%")
+      (format fd "  <arg name=\"launch_map_server\" default=\"true\"/>~%")
+      (format fd "  <arg name=\"use_tf_static\" default=\"false\"/>~%~%")
+      (format fd "  <!-- arguments for internal use -->~%")
+      (format fd "  <arg name=\"tf_pkg\" default=\"tf\" unless=\"$(arg use_tf_static)\"/>~%")
+      (format fd "  <arg name=\"tf_pkg\" default=\"tf2_ros\" if=\"$(arg use_tf_static)\"/>~%")
+      (format fd "  <arg name=\"tf_topic\" default=\"tf\" unless=\"$(arg use_tf_static)\"/>~%")
+      (format fd "  <arg name=\"tf_topic\" default=\"tf_static\" if=\"$(arg use_tf_static)\"/>~%~%")
       ;;
       (format fd "  <group if=\"$(arg launch_map_server)\">~%")
       (format fd "    <!-- map for visualization nodes -->~%")
@@ -105,28 +111,29 @@ map_id: ~a"
       ;;
       (setq cntr 0)
       (dolist (map floors)
-        (format fd "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\"$(anon map_tf~2,2D)\"
-        args=\"~7,3f ~7,3f ~7,3f 0 0 0 ~a ~a 100\"/>~%"
+        (format fd "  <node pkg=\"$(arg tf_pkg)\" type=\"static_transform_publisher\" name=\"$(anon map_tf~2,2D)\"
+        args=\"~7,3f ~7,3f ~7,3f 0 0 0 1 ~a ~a 100\"/>~%"
                 cntr
                 (/ (elt (send map :worldpos) 0) 1000.0)
                 (/ (elt (send map :worldpos) 1) 1000.0)
                 (/ (elt (send map :worldpos) 2) 1000.0)
                 (send building :name) (send map :name))
         (incf cntr)
-        (format fd "  <node pkg=\"tf\" type=\"static_transform_publisher\" name=\"$(anon map_tf~2,2D)\"
-        args=\"  0.000   0.000   0.000 0 0 0 ~a /map 100\" >~%
-    <remap from=\"tf\" to=\"~a_tf\"/>
+        (format fd "  <node pkg=\"$(arg tf_pkg)\" type=\"static_transform_publisher\" name=\"$(anon map_tf~2,2D)\"
+        args=\"  0.000   0.000   0.000 0 0 0 1 ~a /map 100\" >
+    <remap from=\"$(arg tf_topic)\" to=\"~a_$(arg tf_topic)\"/>
   </node>~%"
                 cntr (send map :name) (send map :name))
         (incf cntr)
         )
       ;;
       (format fd "  <node name=\"tf_mux\" pkg=\"topic_tools\" type=\"mux\"
-        args=\"tf ")
+        args=\"$(arg tf_topic) ")
       (dolist (map floors)
-        (format fd " ~a_tf" (send map :name)))
+        (format fd " ~a_$(arg tf_topic)" (send map :name)))
       (format fd "\">
     <remap from=\"mux\" to=\"map_tf_mux\" />
+    <param name=\"~~latch\" value=\"true\" />
   </node>~%")
       ;;
       (format fd "</launch>~%")
