@@ -25,7 +25,7 @@
             (ASKED ?AT - spot)
             (DELIVERED ?OBJ - item ?WHO - person)
             (AT ?AT - spot)))
-    (send domain :functions '((total-cost) (distance ?FROM ?TO) (manip-cost ?OBJ)))
+    (send domain :functions '((total-cost) (distance ?FROM ?TO) (manip-cost ?OBJ ?AT)))
     (setq actions
           (list
            (instance pddl-action :init
@@ -76,7 +76,7 @@
                      :effect '((ONHAND ?OBJ ?ARM)
                                (NOT (ON ?OBJ ?AT))
                                (NOT (OCCUPIED ?OBJ ?AT))
-                               (increase (total-cost) (manip-cost ?OBJ))))
+                               (increase (total-cost) (manip-cost ?OBJ ?AT))))
            (instance pddl-action :init
                      :name "pick_f"
                      :parameters '((?OBJ item) (?ARM arm) (?AT spot))
@@ -85,7 +85,7 @@
                                      (AT ?AT)
                                      (SURELYON ?OBJ ?AT)
                                      (NOT (UNAVAILABLE ?AT)))
-                     :effect '((increase (total-cost) (manip-cost ?OBJ))))
+                     :effect '((increase (total-cost) (manip-cost ?OBJ ?AT))))
            (instance pddl-action :init
                      :name "place"
                      :parameters '((?OBJ item) (?ARM arm) (?AT spot))
@@ -95,7 +95,7 @@
                                      (NOT (OCCUPIED ?OBJ ?AT)))
                      :effect '((NOT (ONHAND ?OBJ ?ARM))
                                (ON ?OBJ ?AT)
-                               (increase (total-cost) (manip-cost ?OBJ))))
+                               (increase (total-cost) (manip-cost ?OBJ ?AT))))
            (instance pddl-action :init
                      :name "place_f"
                      :parameters '((?OBJ item) (?ARM arm) (?AT spot))
@@ -103,7 +103,7 @@
                                      (AT ?AT)
                                      (NOT (OCCUPIED ?OBJ ?AT))
                                      (NOT (UNAVAILABLE ?AT)))
-                     :effect '((increase (total-cost) (manip-cost ?OBJ))
+                     :effect '((increase (total-cost) (manip-cost ?OBJ ?AT))
                                (OCCUPIED ?OBJ ?AT)))
            (instance pddl-action :init
                      :name "open-door"
@@ -130,7 +130,7 @@
                                      (NOT (UNAVAILABLE ?AT)))
                      :effect '((NOT (ONHAND ?OBJ ?ARM))
                                (DELIVERED ?OBJ ?WHO)
-                               (increase (total-cost) (manip-cost ?OBJ))))
+                               (increase (total-cost) (manip-cost ?OBJ ?AT))))
            (instance pddl-action :init
                      :name "deliver_f"
                      :parameters '((?OBJ item) (?ARM arm) (?WHO person) (?AT spot))

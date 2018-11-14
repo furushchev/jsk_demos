@@ -7,16 +7,20 @@
 (require :pddl-result-graph "package://pddl_planner/src/pddl-result-graph.l")
 (require :pddl2smach "package://roseus_smach/src/pddl2smach.l")
 (require :state-machine-ros "package://roseus_smach/src/state-machine-ros.l")
+(require :app-utils "package://interactive_behavior_201409/euslisp/app-utils.l")
+(require :pr2-preemptive-interface "package://interactive_behavior_201409/euslisp/pr2-preemptive-interface.l")
 
-
-(defun make-domain ()
+(defun make-domain (&key use-arms)
   (let ((domain (instance pddl-domain :init :name 'room-domain))
         actions)
     (send domain :requirements
           '(:adl :typing :action-costs :negative-preconditions)
           )
     (send domain :types '(spot arm item person))
-    (send domain :constants '(arms - arm cleaner - item somewhere - spot someone - person))
+    (send domain :constants '(cleaner - item somewhere - spot someone - person))
+    (when use-arms
+      (send domain :constants
+            (append (send domain :constants) '(arms - arm))))
     (send domain :predicates
           '((ROBOT-AT ?AT - spot)
             (SURE-ON ?OBJ - item ?AT - spot)
@@ -28,15 +32,17 @@
             (ONHAND ?OBJ - item ?ARM - arm)
             (OPEN ?AT - spot)
             (AVAILABLE ?AT - spot)
+            (OCCUPIED ?AT - spot)
             (PLACABLE ?OBJ - item ?AT - spot)
             (OPENABLE ?ARM - arm ?AT - spot)
             (CLEAN)
             ))
     (send domain :functions '((total-cost)
-                              (distance ?FROM ?TO - spot)
-                              (manip-cost ?OBJ - item ?ARM - arm)
+                              (move-cost ?FROM ?TO - spot)
+                              (arm-cost ?ARM - arm)
+                              (obj-cost ?OBJ - item ?AT - spot)
                               (find-cost)
-                              (door-cost)
+                              (manip-cost)
                               ))
     (setq actions
           (list
@@ -49,7 +55,7 @@
                                (ROBOT-AT ?TO)
                                (FORALL (?OBJ - item)
                                 (NOT (SURE-ON ?OBJ ?FROM)))
-                               (increase (total-cost) (distance ?FROM ?TO))))
+                               (increase (total-cost) (move-cost ?FROM ?TO))))
            (instance pddl-action :init
                      :name "find-object"
                      :parameters '((?OBJ item) (?AT spot))
@@ -57,21 +63,26 @@
                                      (ON ?OBJ ?AT)
                                      (AVAILABLE ?AT))
                      :effect '((SURE-ON ?OBJ ?AT)
-                               ;;(NOT (ON ?OBJ ?AT))
+                               (NOT (ON ?OBJ ?AT))
                                (INCREASE (TOTAL-COST) (FIND-COST))))
            (instance pddl-action :init
                      :name "pick"
                      :parameters '((?OBJ item) (?ARM arm) (?AT spot))
-                     :precondition '((forall (?OTHER - item)
-                                      (AND (NOT (ONHAND ?OTHER ?ARM))
-                                           (NOT (ONHAND ?OTHER ARMS))))
+                     :precondition `(,(if use-arms
+                                         '(forall (?OTHER - item)
+                                                 (AND (NOT (ONHAND ?OTHER ?ARM))
+                                                      (NOT (ONHAND ?OTHER ARMS))))
+                                        '(forall (?OTHER - item)
+                                                 (NOT (ONHAND ?OTHER ?ARM))))
                                      (ROBOT-AT ?AT)
                                      (SURE-ON ?OBJ ?AT)
                                      (AVAILABLE ?AT))
                      :effect '((ONHAND ?OBJ ?ARM)
                                (NOT (SURE-ON ?OBJ ?AT))
                                (NOT (ON ?OBJ ?AT))
-                               (increase (total-cost) (manip-cost ?OBJ ?ARM))))
+                               (NOT (OCCUPIED ?AT))
+                               (increase (total-cost) (arm-cost ?ARM))
+                               (increase (total-cost) (obj-cost ?OBJ ?AT))))
            (instance pddl-action :init
                      :name "find-placement"
                      :parameters '((?OBJ item) (?ARM arm) (?AT spot))
@@ -87,36 +98,44 @@
                                      (ROBOT-AT ?AT)
                                      (AVAILABLE ?AT)
                                      (PLACABLE ?OBJ ?AT)
+                                     (NOT (OCCUPIED ?AT))
                                      )
                      :effect '((NOT (ONHAND ?OBJ ?ARM))
                                (ON ?OBJ ?AT)
                                (NOT (PLACABLE ?OBJ ?AT))
-                               (increase (total-cost) (manip-cost ?OBJ ?ARM))))
+                               (increase (total-cost) (arm-cost ?ARM))
+                               (increase (total-cost) (obj-cost ?OBJ ?AT))))
            (instance pddl-action :init
                      :name "open-door"
                      :parameters '((?ARM arm) (?AT spot))
-                     :precondition '((FORALL (?OBJ - item)
-                                      (AND (NOT (ONHAND ?OBJ ?ARM))
-                                           (NOT (ONHAND ?OBJ ARMS))))
+                     :precondition `(,(if use-arms
+                                         '(FORALL (?OBJ - item)
+                                                  (AND (NOT (ONHAND ?OBJ ?ARM))
+                                                       (NOT (ONHAND ?OBJ ARMS))))
+                                        '(FORALL (?OBJ - item)
+                                                 (NOT (ONHAND ?OBJ ?ARM))))
                                      (ROBOT-AT ?AT)
                                      (NOT (AVAILABLE ?AT))
+                                     (NOT (OPEN ?AT))
                                      (OPENABLE ?ARM ?AT))
                      :effect '((AVAILABLE ?AT)
                                (OPEN ?AT)
-                               (increase (total-cost) (door-cost))))
+                               (increase (total-cost) (manip-cost))))
            (instance pddl-action :init
                      :name "close-door"
                      :parameters '((?ARM arm) (?AT spot))
-                     :precondition '((forall (?OBJ - item)
-                                      (AND (NOT (ONHAND ?OBJ ?ARM))
-                                           (NOT (ONHAND ?OBJ ARMS))))
+                     :precondition `(,(if use-arms
+                                          '(forall (?OBJ - item)
+                                                   (AND (NOT (ONHAND ?OBJ ?ARM))
+                                                        (NOT (ONHAND ?OBJ ARMS))))
+                                        '(forall (?OBJ - item)
+                                                 (NOT (ONHAND ?OBJ ?ARM))))
                                      (ROBOT-AT ?AT)
                                      (OPENABLE ?ARM ?AT)
-                                     (OPEN ?AT)
-                                     (AVAILABLE ?AT))
+                                     (OPEN ?AT))
                      :effect '((NOT (AVAILABLE ?AT))
                                (NOT (OPEN ?AT))
-                               (increase (total-cost) (door-cost))))
+                               (increase (total-cost) (manip-cost))))
            (instance pddl-action :init
                      :name "clean-room"
                      :parameters '((?ARM arm) (?AT spot))
@@ -162,28 +181,34 @@
                              :precondition '((ROBOT-AT ?AT)
                                              (ON ?OBJ ?AT)
                                              (AVAILABLE ?AT))
-                             :effect '((NOT (ON ?OBJ ?AT))))
+                             :effect '((NOT (ON ?OBJ ?AT))
+                                       (increase (total-cost) (find-cost))))
                    (instance pddl-action :init
                              :name "pick_f"
                              :parameters '((?OBJ item) (?ARM arm) (?AT spot))
-                             :precondition '((forall (?OTHER - item)
-                                                     (AND (NOT (ONHAND ?OTHER ?ARM))
-                                                          (NOT (ONHAND ?OTHER ARMS))))
+                             :precondition `(,(if use-arms
+                                                  '(forall (?OTHER - item)
+                                                           (AND (NOT (ONHAND ?OTHER ?ARM))
+                                                                (NOT (ONHAND ?OTHER ARMS))))
+                                                '(forall (?OTHER - item)
+                                                         (NOT (ONHAND ?OTHER ?ARM))))
                                              (ROBOT-AT ?AT)
                                              (SURE-ON ?OBJ ?AT)
                                              (AVAILABLE ?AT))
                              :effect '((ON ?OBJ ?AT)
                                        (NOT (SURE-ON ?OBJ ?AT))
-                                       (increase (total-cost) (manip-cost ?OBJ ?ARM))))
-                   #|
+                                       (increase (total-cost) (arm-cost ?ARM))
+                                       (increase (total-cost) (obj-cost ?OBJ ?AT))))
                    (instance pddl-action :init
                              :name "find-placement_f"
                              :parameters '((?OBJ item) (?ARM arm) (?AT spot))
                              :precondition '((ONHAND ?OBJ ?ARM)
                                              (ROBOT-AT ?AT)
                                              (AVAILABLE ?AT))
-                             :effect '((NOT (AVAILABLE ?AT))))
-                   |#
+                             :effect '((NOT (AVAILABLE ?AT))
+                                       (NOT (OPENABLE ?ARM ?AT))
+                                       (OCCUPIED ?AT)
+                                       (increase (total-cost) (find-cost))))
                    (instance pddl-action :init
                              :name "find-person_f"
                              :parameters '((?WHO person) (?AT spot))
@@ -207,13 +232,13 @@
           (cond
            ((and use-map from-cds to-cds)
             (setq dist (norm (send from-cds :difference-position to-cds)))
-            (push `(= (distance ,from ,to) ,(floor (* factor dist))) init))
-           (t (push `(= (distance ,from ,to) 30) init))))))
+            (push `(= (move-cost ,from ,to) ,(floor (* factor dist))) init))
+           (t (push `(= (move-cost ,from ,to) 30) init))))))
     (dolist (spot spots)
-      (push `(= (distance ,spot ,spot) 1000) init))
+      (push `(= (move-cost ,spot ,spot) 1000) init))
     init))
 
-(defun make-problem (&key init goal items people)
+(defun make-problem (&key init goal items people use-arms)
   (let ((problem (instance pddl-problem :init
                            :name 'house-keeping
                            :domain 'room-domain))
@@ -225,12 +250,30 @@
           items (copy-object items)
           people (copy-object people))
 
-    ;; manip cost
-    (let ((unique-items (remove-duplicates items)))
+    ;; arm cost
+    (push '(= (arm-cost larm) 10) init)
+    (push '(= (arm-cost rarm) 10) init)
+    (when use-arms
+      (push '(= (arm-cost arms) 30) init))
+    ;; (let ((unique-items (remove-duplicates items)))
+    ;;   (dolist (item (append unique-items (list 'cleaner)))
+    ;;     (push `(= (arm-cost ,item larm) 10) init)
+    ;;     (push `(= (arm-cost ,item rarm) 10) init)
+    ;;     (when use-arms
+    ;;       (push `(= (arm-cost ,item arms) 30) init))))
+
+    ;; obj cost
+    (let ((unique-items (remove-duplicates items))
+          exist-spots unique-spots)
       (dolist (item (append unique-items (list 'cleaner)))
-        (push `(= (manip-cost ,item larm) 10) init)
-        (push `(= (manip-cost ,item rarm) 10) init)
-        (push `(= (manip-cost ,item arms) 30) init)))
+        (setq exist-spots (mapcar #'(lambda (x) (car (last (cadr x))))
+                                  (remove-if-not
+                                   #'(lambda (x) (and (eq (car x) '=)
+                                                      (eq (caadr x) 'obj-cost)
+                                                      (eq (cadr (cadr x)) item)))
+                                   init)))
+        (dolist (spot (set-difference spots exist-spots))
+          (push `(= (obj-cost ,item ,spot) 100) init))))
 
     ;; distance cost
     (let ((unique-spots (remove-duplicates spots)))
@@ -239,7 +282,7 @@
 
     ;; other costs
     (push '(= (total-cost) 0) init)
-    (push '(= (door-cost) 10) init)
+    (push '(= (manip-cost) 10) init)
     (push '(= (find-cost) 50) init)
 
     ;; default conds
@@ -351,7 +394,7 @@
             (AVAILABLE TABLE)
             (AVAILABLE DRAWER)
             (= (total-cost) 0)
-            (= (door-cost) 1000)))
+            (= (manip-cost) 1000)))
 
     (let (inits
           (spots (mapcar #'car
@@ -367,9 +410,9 @@
         (dolist (from spots)
           (dolist (to spots)
             (unless (eq from to)
-              (push `(= (distance ,from ,to) ,(incf cost 1)) inits)))))
+              (push `(= (move-cost ,from ,to) ,(incf cost 1)) inits)))))
       (dolist (s spots)
-        (push `(= (distance ,s ,s) 10000) inits))
+        (push `(= (move-cost ,s ,s) 10000) inits))
       ;; manip
       (let ((cost 10))
         (dolist (a '(larm rarm))
