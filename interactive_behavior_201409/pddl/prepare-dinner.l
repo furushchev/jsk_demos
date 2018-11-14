@@ -9,15 +9,13 @@
   (setq *domain* (make-domain))
   (setq *problem* (make-problem :init
                                 '((ROBOT-AT START)
-                                  )
+                                  (ON NOODLES COUNTER))
                                 :goal
-                                '((ON BOWL TABLE)
-                                  (ON CUP TABLE)
-                                  (ON BOTTLE TABLE))
+                                '((ON NOODLES TABLE))
                                 :items
-                                '(CUP BOTTLE BOWL BOOK)
+                                '(NOODLES)
                                 ))
-  (setq *sm* (plan-task *domain* *problem* :debug debug)))
+  (setq *sm* (plan-task *domain* *problem* :debug debug :use-cache nil)))
 
 (defun run (&optional debug)
   (plan debug)
@@ -27,16 +25,11 @@
   (setq *domain* (make-domain))
   (setq *problem* (make-problem :init
                                 '((ROBOT-AT START)
-                                  (ON BOWL KITCHEN)
-                                  (ON SERIAL KITCHEN)
-                                  (ON MILK FRIDGE)
-                                  )
+                                  (ON NOODLES COUNTER))
                                 :goal
-                                '((ON BOWL TABLE)
-                                  (ON SERIAL TABLE)
-                                  (ON MILK TABLE))
+                                '((ON NOODLES TABLE))
                                 :items
-                                '(BOWL SERIAL MILK)
+                                '(NOODLES)
                                 ))
   (setq failed-nodes nil)
   (unless failed-nodes

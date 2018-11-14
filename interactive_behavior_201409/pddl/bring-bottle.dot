@@ -1,0 +1,22 @@
+digraph hoge {
+   DOLIST54467 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(open fridge)\n(robot-at fridge))"];
+   DOLIST54468 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(on coffee table)\n(robot-at table))"];
+   DOLIST54469 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(onhand coffee larm)\n(placable coffee table)\n(robot-at table))"];
+   DOLIST54470 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(onhand coffee larm)\n(robot-at table))"];
+   DOLIST54471 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(onhand coffee larm)\n(robot-at fridge))"];
+   DOLIST54472 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(sure-placable fridge)\n(onhand coffee larm)\n(open fridge)\n(robot-at fridge))"];
+   DOLIST54473 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(sure-placable fridge)\n(open fridge)\n(robot-at fridge)\n(sure-on coffee fridge))"];
+   DOLIST54474 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(sure-placable fridge)\n(on coffee fridge)\n(open fridge)\n(robot-at fridge))"];
+   DOLIST54475 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(on coffee fridge)\n(robot-at fridge))"];
+   DOLIST54476 [label = "((openable fridge)\n(placable fridge)\n(placable table)\n(on coffee fridge)\n(robot-at start))"];
+   DOLIST54469 -> DOLIST54468 [label = "(place coffee larm table)"];
+   DOLIST54470 -> DOLIST54469 [label = "(find-placement coffee larm table)"];
+   DOLIST54471 -> DOLIST54470 [label = "(move-to fridge table)"];
+   DOLIST54472 -> DOLIST54471 [label = "(close-door rarm fridge)"];
+   DOLIST54473 -> DOLIST54474 [label = "(pick_f coffee larm fridge)"];
+   DOLIST54473 -> DOLIST54472 [label = "(pick coffee larm fridge)"];
+   DOLIST54474 -> DOLIST54467 [label = "(find-object_f coffee fridge)"];
+   DOLIST54474 -> DOLIST54473 [label = "(find-object coffee fridge)"];
+   DOLIST54475 -> DOLIST54474 [label = "(open-door rarm fridge)"];
+   DOLIST54476 -> DOLIST54475 [label = "(move-to start fridge)"];
+}

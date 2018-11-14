@@ -1,0 +1,20 @@
+digraph hoge {
+   PROG155992 [label = "((occupied kitchen)\n(placable table)\n(onhand tray arms)\n(robot-at kitchen))"];
+   PROG155993 [label = "((placable kitchen)\n(placable table)\n(robot-at table))"];
+   PROG155994 [label = "((placable kitchen)\n(placable table)\n(on tray kitchen)\n(robot-at kitchen))"];
+   PROG155995 [label = "((placable kitchen)\n(placable table)\n(onhand tray arms)\n(sure-placable tray kitchen)\n(robot-at kitchen))"];
+   PROG155996 [label = "((placable kitchen)\n(placable table)\n(onhand tray arms)\n(robot-at kitchen))"];
+   PROG155997 [label = "((placable kitchen)\n(placable table)\n(onhand tray arms)\n(robot-at table))"];
+   PROG155998 [label = "((placable kitchen)\n(placable table)\n(robot-at table)\n(sure-on tray table))"];
+   PROG155999 [label = "((placable kitchen)\n(placable table)\n(on tray table)\n(robot-at table))"];
+   PROG156000 [label = "((placable kitchen)\n(placable table)\n(on tray table)\n(robot-at start))"];
+   PROG155995 -> PROG155994 [label = "(place tray arms kitchen)"];
+   PROG155996 -> PROG155992 [label = "(find-placement_f tray arms kitchen)"];
+   PROG155996 -> PROG155995 [label = "(find-placement tray arms kitchen)"];
+   PROG155997 -> PROG155996 [label = "(move-to table kitchen)"];
+   PROG155998 -> PROG155999 [label = "(pick_f tray arms table)"];
+   PROG155998 -> PROG155997 [label = "(pick tray arms table)"];
+   PROG155999 -> PROG155993 [label = "(find-object_f tray table)"];
+   PROG155999 -> PROG155998 [label = "(find-object tray table)"];
+   PROG156000 -> PROG155999 [label = "(move-to start table)"];
+}

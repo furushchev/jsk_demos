@@ -1,14 +1,17 @@
 #!/usr/bin/env roseus
-;; deliver-bottle.l
+;; prepare-lunch.l
 ;; Author: Yuki Furuta <furushchev@jsk.imi.i.u-tokyo.ac.jp>
 
 (require :pr2-actionlib "package://interactive_behavior_201409/pddl/pr2-actionlib.l")
 (require :new-room-domain "package://interactive_behavior_201409/pddl/new-room-domain.l")
 
-(defun plan (&optional debug)
+(defun make-graph ()
   (setq *domain* (make-domain))
   (setq *problem* (make-problem :init
                                 '((ROBOT-AT START)
+                                  (ON BOWL DISHWASHER)
+                                  (ON CUP KITCHEN)
+                                  (ON BOTTLE FRIDGE)
                                   )
                                 :goal
                                 '((ON BOWL TABLE)
@@ -16,27 +19,6 @@
                                   (ON BOTTLE TABLE))
                                 :items
                                 '(CUP BOTTLE BOWL BOOK)
-                                ))
-  (setq *sm* (plan-task *domain* *problem* :debug debug)))
-
-(defun run (&optional debug)
-  (plan debug)
-  (pprint (exec-preemptive-task *sm*)))
-
-(defun make-graph ()
-  (setq *domain* (make-domain))
-  (setq *problem* (make-problem :init
-                                '((ROBOT-AT START)
-                                  (ON BOWL KITCHEN)
-                                  (ON SERIAL KITCHEN)
-                                  (ON MILK FRIDGE)
-                                  )
-                                :goal
-                                '((ON BOWL TABLE)
-                                  (ON SERIAL TABLE)
-                                  (ON MILK TABLE))
-                                :items
-                                '(BOWL SERIAL MILK)
                                 ))
   (setq failed-nodes nil)
   (unless failed-nodes

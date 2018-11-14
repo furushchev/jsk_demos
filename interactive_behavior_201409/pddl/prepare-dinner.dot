@@ -1,0 +1,20 @@
+digraph hoge {
+   PROG149905 [label = "((occupied table)\n(onhand noodles larm)\n(robot-at table))"];
+   PROG149906 [label = "((placable table)\n(robot-at counter))"];
+   PROG149907 [label = "((on noodles table)\n(placable table)\n(robot-at table))"];
+   PROG149908 [label = "((onhand noodles larm)\n(placable table)\n(robot-at table)\n(sure-placable noodles table))"];
+   PROG149909 [label = "((onhand noodles larm)\n(placable table)\n(robot-at table))"];
+   PROG149910 [label = "((onhand noodles larm)\n(placable table)\n(robot-at counter))"];
+   PROG149911 [label = "((placable table)\n(robot-at counter)\n(sure-on noodles counter))"];
+   PROG149912 [label = "((on noodles counter)\n(placable table)\n(robot-at counter))"];
+   PROG149913 [label = "((on noodles counter)\n(placable table)\n(robot-at start))"];
+   PROG149908 -> PROG149907 [label = "(place noodles larm table)"];
+   PROG149909 -> PROG149905 [label = "(find-placement_f noodles larm table)"];
+   PROG149909 -> PROG149908 [label = "(find-placement noodles larm table)"];
+   PROG149910 -> PROG149909 [label = "(move-to counter table)"];
+   PROG149911 -> PROG149912 [label = "(pick_f noodles larm counter)"];
+   PROG149911 -> PROG149910 [label = "(pick noodles larm counter)"];
+   PROG149912 -> PROG149906 [label = "(find-object_f noodles counter)"];
+   PROG149912 -> PROG149911 [label = "(find-object noodles counter)"];
+   PROG149913 -> PROG149912 [label = "(move-to start counter)"];
+}
