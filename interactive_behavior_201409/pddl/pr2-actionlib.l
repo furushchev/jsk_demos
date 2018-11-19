@@ -88,6 +88,8 @@
       (larm
        (send *ri* :go-pos-unsafe -0.1 0 0)
        (pr2-tuckarm-pose :larm :outside))
+      (arms
+       (send *ri* :go-pos-unsafe -0.1 0 0))
       (t
        (send *ri* :go-pos-unsafe -0.1 0 0)
        (pr2-tuckarm-pose)))
@@ -100,6 +102,8 @@
          ;; rotate to avoid collision to table
          (send *ri* :go-pos-unsafe 0.1 -0.1 -90))
        (go-to-dishwasher userdata)) ;; coe
+      ('cleaner (go-to-cleaner userdata))
+      ('kitchen-isle (go-to-kitchen-isle userdata))
       (t
        (let (target-spot)
          (if (cdr (assoc :target-place userdata))
@@ -132,6 +136,8 @@
        (send *ri* :angle-vector (send *pr2* :angle-vector) 1000 :head-controller)
        (send *ri* :wait-interpolation)
        (send *pr2* :angle-vector (send *ri* :state :potentio-vector))))
+    ((eq spot 'cleaner)
+     t)
     (t
      ;; lookup label
      (let ((*tabletop-bbox-topic* "/tabletop/euclidean_clustering_decomposer/boxes")
@@ -157,7 +163,8 @@
           res)
       ;; pre pick pose for avoiding collision
       (unless (or (eq spot 'fridge)
-                  (eq spot 'dishwasher))
+                  (eq spot 'dishwasher)
+                  (eq spot 'cleaner))
         (send *pr2* (cdr (assoc :arm userdata)) :angle-vector
               (get-side-pose (cdr (assoc :arm userdata))))
         (send *ri* :angle-vector (send *pr2* :angle-vector) 3000 arm-controller)
@@ -168,9 +175,11 @@
       (send *pr2* :angle-vector (send *ri* :state :potentio-vector))
       ;;
       (cond
-        ((eq spot 'dishwasher)
+       ((eq spot 'cleaner)
+        (setq res (pick-cleaner userdata)))
+       ((eq spot 'dishwasher)
          (setq res (pick-from-dishwasher userdata)))
-        (t
+       (t
          (with-monitoring (:joint)
            (cond
              ((eq spot 'fridge)
@@ -213,6 +222,9 @@
        (put-into-dishwasher userdata))
       ((eq obj 'bowl)
        (place-bowl userdata))
+      ((eq obj 'cleaner)
+       (set-alist :arms nil userdata)
+       (place-cleaner userdata))
       ((eq spot 'fridge)
        (place-in-fridge userdata))
       (t ;; place to support plane
