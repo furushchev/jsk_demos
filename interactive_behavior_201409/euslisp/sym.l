@@ -164,7 +164,7 @@
     ;; resolve using inst ops.
     (send self :resolve-prefer)
     (send self :resolve-usual)
-    ;; (send self :resolve-in-place)
+    (send self :resolve-in-place)
     t)
   ;;
   (:resolve-robot-at (&optional spot)
@@ -228,18 +228,18 @@
       (send self :goal-condition goal-cond))) ;; resolve-prefer
   ;;
   (:resolve-usual ()
-    (dotimes (i 2)
+    (dotimes (i 5)
       (ros::ros-info "resolve-usual [~A]" i)
       (let* ((init-cond (copy-object (send self :initial-condition)))
              (goal-cond (copy-object (send self :goal-condition)))
              (usual-sexp (find-sexp (append init-cond goal-cond) :operator 'usual)))
         ;; check
         (unless usual-sexp
-          (ros::ros-info "all usual operator was replaced")
+          (ros::ros-info "all usual operators ware resolved")
           (return-from :resolve-usual t))
         (send self :resolve-usual-once)
-        (pprint (send self :initial-condition))
-        (pprint (send self :goal-condition))
+        ;; (pprint (send self :initial-condition))
+        ;; (pprint (send self :goal-condition))
         )))
   (:resolve-usual-once ()
     (let* ((init-cond (copy-object (send self :initial-condition)))
@@ -249,7 +249,6 @@
       (unless usual-sexp
         (ros::ros-info "no usual operator found")
         (return-from :resolve-usual nil))
-      (warn "usual: ~A~%" usual-sexp)
       ;; resolve
       (dolist (sexp usual-sexp)
         (unless (or (eq (length sexp) 3)
@@ -271,25 +270,10 @@
                   (init-tmpl (find-sexp init-cond :operand item))
                   (goal-tmpl (find-sexp goal-cond :operand item))
                   rep repinit repgoal)
-              (ros::ros-warn "items: ~A" (mapcar #'(lambda (x) (cadr (car x))) ret))
               (setq rep (resolve-symbol init-cond goal-cond
                                         item (mapcar #'(lambda (x) (cadr (car x))) ret)))
               (setq init-cond (cdr (assoc :initial-condition rep)))
               (setq goal-cond (cdr (assoc :goal-condition rep)))
-              (ros::ros-warn "~A" init-cond)
-              (dolist (rep ret)
-                (let* ((repsexp (car rep))
-                       (repcost (cdr rep))
-                       (reppred (car repsexp))
-                       (repitem (cadr repsexp)))
-                  ;; (ros::ros-warn "sexp: ~A item: ~A repitem: ~A" sexp item repitem)
-                  ;; (send self :resolve-symbol item repitem :duplicate-variables t)
-                  ;; (setq repinit (replace-symbol init-tmpl item repitem))
-                  ;; (setq repgoal (replace-symbol goal-tmpl item repitem))
-                  ;; ;; FIXME: reppred (on/in)
-                  ;; (setq init-cond (append init-cond repinit))
-                  ;; (setq goal-cond (append goal-cond repgoal))
-                  ))
               (dolist (s init-tmpl)
                 (setq init-cond (remove-sexp init-cond s)))
               (dolist (s goal-tmpl)
@@ -501,5 +485,5 @@
     prob))
 
 
-;;(test-tidyup)
-;;(test-prepare)
+(test-tidyup)
+(test-prepare)
