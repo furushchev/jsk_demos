@@ -6,7 +6,7 @@
 (ros::load-ros-manifest "pr2_controllers_msgs")
 (require :eus-pddl "package://pddl_planner/src/eus-pddl.l")
 (require :semantic-world-client "package://semantic_world/src/semantic-world-client.l")
-
+(require :new-room-domain "package://interactive_behavior_201409/pddl/new-room-domain.l")
 
 (defun cons-cdr (sexp)
   "(cons-cdr '(1 2 3 . 4)) -> 4"
@@ -212,7 +212,8 @@
                     item (variable-p item) who (variable-p who))
     (return-from resolve-prefer nil))
   ;; TOOD: call service for bayesian
-  (read-from-string (format nil "~A-FOR-~A" (string-upcase item) (string-upcase who))))
+  ;; (read-from-string (format nil "~A-FOR-~A" (string-upcase item) (string-upcase who)))
+  item)
 
 (defclass usual-resolver
   :super propertied-object
@@ -236,11 +237,15 @@
       (setq result (ros::service-call query-srv-name
                                       (instance mbtk::QueryObjectPositionRequest :init
                                                 :class_label (string-downcase query-item))))
+      (when (null-string-p (send result :object_positions :header :frame_id))
+        (ros::ros-error "[usual-resolver] no object position found for item ~A"
+                        (string-downcase query-item))
+        (return-from :wait-for-result nil))
       ;; transform for eus coords
       (unless (send *tfl* :wait-for-transform world-frame-id
                     (send result :object_positions :header :frame_id) (ros::time 0) 10)
         (ros::ros-error "[usual-resolver] failed to lookup transform: ~A ~A"
-                          world-frame-id (send res :object_positions :header :frame_id))
+                          world-frame-id (send result :object_positions :header :frame_id))
         (return-from :wait-for-result nil))
       (setq weights (concatenate cons (send result :object_positions :weights)))
       (setq cds-lst (mapcar #'(lambda (pc)
@@ -274,12 +279,19 @@
 (defun resolve-usual-item (spot)
   ;; TODO: impl
   ;; アイテムごとに
-  `(((on bowl ,spot) . 7)
+  `(
+    ((on bowl ,spot) . 7)
     ((on cereal ,spot) . 2)
-    ((on milk ,spot) . 1)))
+    ((on plasticbottle ,spot) . 1)
+    ))
 
 (defun resolve-item-place (item cds)
-  (let ((sexp (cdr (assoc :states (inspect-item :coords cds :simplify t :single-in t)))))
+  (let ((sexp (cadr (assoc :states (inspect-item :coords cds :simplify t :single-in t)))))
+    ;; FIXME: workaround for bug in semantic world
+    (when (equal 'and (car sexp))
+      (let ((s (find-sexp (list sexp) :operator 'in)))
+        (setq sexp (if s (car s) (cadr sexp)))))
+    ;;
     (replace-symbol sexp 'target item)))
 #|
   (cond
@@ -296,13 +308,23 @@
   (let (retval)
     (push `(placable ,spot) retval)
     (when (memq spot '(fridge kitchen drawer))
-      (push `(openable ,spot) retval))
+      (push `(openable larm ,spot) retval)
+      (push `(openable rarm ,spot) retval)
+      )
     retval))
 
 (defclass pddl-situation-problem
   :super pddl-problem
   :slots ())
 (defmethod pddl-situation-problem
+  ;;
+  (:add-object (obj typ)
+    (send self :objects
+          (remove-duplicates
+           (append (list (cons obj typ))
+                   (send self :objects))
+           :test #'equal)))
+  ;;
   (:resolve (&key robot-at on who)
     "resolve top-level function"
     ;; WARNING: the order is very severe
@@ -317,6 +339,8 @@
     (send self :resolve-prefer)
     (send self :resolve-usual)
     (send self :resolve-in-place)
+    (send self :append-costs)
+    (send self :decompose-in)
     t)
   ;;
   (:resolve-robot-at (&optional spot)
@@ -331,6 +355,7 @@
         (return-from :resolve-robot-at t))
       (send self :initial-condition (replace-symbol init-cond (cadar robot-at-sexp) spot))
       (send self :goal-condition (replace-symbol goal-cond (cadar robot-at-sexp) spot))
+      (send self :add-object spot 'spot)
       (ros::ros-info "<< [:resolve-robot-at] Replaced ~A=~A" (cadar robot-at-sexp) spot)
       t))
   ;;
@@ -349,6 +374,7 @@
         (setq goal-cond (replace-symbol goal-cond var who)))
       (send self :initial-condition init-cond)
       (send self :goal-condition goal-cond)
+      (send self :add-object who 'person)
       (ros::ros-info "<< [:resolve-who] Replaced ~A=~A" vars who)
       t))
   ;;
@@ -371,6 +397,8 @@
         (setq goal-cond (cdr (assoc :goal-condition rep))))
       (send self :initial-condition init-cond)
       (send self :goal-condition goal-cond)
+      (dolist (item items)
+        (send self :add-object item 'item))
       (ros::ros-info "<< [:resolve-on] Replaced ~A=~A" vars items)
       t))
   ;;
@@ -378,13 +406,18 @@
     (ros::ros-info ">> [:resolve-onhand] started")
     (let ((init-cond (copy-object (send self :initial-condition)))
           (goal-cond (copy-object (send self :goal-condition)))
-          (result (resolve-onhand)))
+          (result (resolve-onhand))
+          item)
       (when (cdr (assoc :larm result))
-        (setq init-cond (append init-cond `((onhand ,(cdr (assoc :larm result)) larm))))
-        (ros::ros-info ">> [:resolve-onhand] larm=~A" (cdr (assoc :larm result))))
+        (setq item (cdr (assoc :larm result)))
+        (setq init-cond (append init-cond `((onhand ,item larm))))
+        (ros::ros-info ">> [:resolve-onhand] larm=~A" item)
+        (send self :add-object item 'item))
       (when (cdr (assoc :rarm result))
-        (setq init-cond (append init-cond `((onhand ,(cdr (assoc :rarm result)) rarm))))
-        (ros::ros-info ">> [:resolve-onhand] rarm=~A" (cdr (assoc :rarm result))))
+        (setq item (cdr (assoc :rarm result)))
+        (setq init-cond (append init-cond `((onhand ,item rarm))))
+        (ros::ros-info ">> [:resolve-onhand] rarm=~A" item)
+        (send self :add-object item 'item))
       (send self :initial-condition init-cond)
       (ros::ros-info "<< [:resolve-onhand] end")
       t))
@@ -406,6 +439,7 @@
         (setq repitem (resolve-prefer item who))
         (setq init-cond (replace-symbol (remove-sexp init-cond sexp) item repitem))
         (setq goal-cond (replace-symbol (remove-sexp goal-cond sexp) item repitem))
+        (send self :add-object item 'item)
         (ros::ros-info ">> [:resolve-prefer] replaced item  ~A=~A" item repitem))
       (send self :initial-condition init-cond)
       (send self :goal-condition goal-cond)
@@ -452,15 +486,17 @@
             (let ((ret (resolve-usual-item spot))
                   (init-tmpl (find-sexp init-cond :operand item))
                   (goal-tmpl (find-sexp goal-cond :operand item))
-                  rep repinit repgoal)
+                  repitems rep repinit repgoal)
+              (setq repitems (mapcar #'(lambda (x) (cadr (car x))) ret))
               (setq rep (resolve-symbol init-cond goal-cond
-                                        item (mapcar #'(lambda (x) (cadr (car x))) ret)))
+                                        item repitems))
               (setq init-cond (cdr (assoc :initial-condition rep)))
               (setq goal-cond (cdr (assoc :goal-condition rep)))
               (dolist (s init-tmpl)
                 (setq init-cond (remove-sexp init-cond s)))
               (dolist (s goal-tmpl)
                 (setq goal-cond (remove-sexp goal-cond s)))
+              (dolist (repitem repitems) (send self :add-object repitem 'item))
               )) ;; (variable-p item)
            ;;
            ((variable-p spot)
@@ -468,23 +504,33 @@
             (let ((ret (resolve-usual-spot item))
                   (init-tmpl (find-sexp init-cond :operand spot))
                   (goal-tmpl (find-sexp goal-cond :operand spot))
-                  repinit repgoal)
+                  repinit repgoal repsyms)
               ;;
               ;; (warn "~A ~A ~A ~A ~A~%" sexp item spot tmpl ret)
               (dolist (rep ret)
                 ;; for all candidate (coords . cost) from probabilistic loc-map
                 (let ((repsexp (resolve-item-place item (car rep)))
                       (repcost (cdr rep))
-                      repsym repinittmpl repgoaltmpl)
+                      reppred repsym repinittmpl repgoaltmpl)
                   (when repsexp
                     ;; when item is related to any spot
                     (setq repsym (car (last repsexp)))
-                    (setq repinittmpl (replace-symbol init-tmpl spot repsym))
-                    (setq repgoaltmpl (replace-symbol goal-tmpl spot repsym))
-                    (setq repinit (remove-duplicates (append repinit repinittmpl) :test #'equal))
-                    (setq repgoal (remove-duplicates (append repgoal repgoaltmpl) :test #'equal))
-                    (setq repcost `((= (obj-cost ,item ,repsym) ,repcost)))
-                    (setq init-cond (append init-cond repcost)))
+                    (unless (memq repsym repsyms)
+                      (push repsym repsyms)
+                      (send self :add-object repsym 'spot)
+                      (ros::ros-warn "repsexp: ~A init-tmpl: ~A goal-tmpl: ~A"
+                                     repsexp init-tmpl goal-tmpl)
+                      (setq repinittmpl (replace-symbol init-tmpl spot repsym))
+                      (setq repgoaltmpl (replace-symbol goal-tmpl spot repsym))
+                      (setq reppred (car repsexp))
+                      (setq repinittmpl (replace-symbol repinittmpl 'on reppred))
+                      (setq repgoaltmpl (replace-symbol repgoaltmpl 'on reppred))
+                      (ros::ros-warn "2 init-tmpl: ~A goal-tmpl: ~A" repinittmpl repgoaltmpl)
+                      (setq repinit (remove-duplicates (append repinit repinittmpl) :test #'equal))
+                      (setq repgoal (remove-duplicates (append repgoal repgoaltmpl) :test #'equal))
+                      ;; coeff for obj-cost
+                      (setq repcost `((= (obj-cost ,item ,repsym) ,(- 1000 (floor (* 1000 repcost))))))
+                      (setq init-cond (append init-cond repcost))))
                   )) ;; for cds
               ;;
               ;; group by or for all on/in
@@ -546,6 +592,122 @@
       (send self :goal-condition goal-cond)
       (ros::ros-info "<< [:resolve-in-place] end")
       t)) ;; resolve-in-place
+  ;;
+  (:append-costs (&key use-arms)
+    (let* ((init-cond (copy-object (send self :initial-condition)))
+           (goal-cond (copy-object (send self :goal-condition)))
+           (items (mapcar #'car (remove-if-not #'(lambda (x) (eq (cdr x) 'item))
+                                               (send self :objects))))
+           (spots (mapcar #'car (remove-if-not #'(lambda (x) (eq (cdr x) 'spot))
+                                               (send self :objects))))
+           )
+      ;; arm cost
+      (push '(= (arm-cost larm) 10) init-cond)
+      (push '(= (arm-cost rarm) 10) init-cond)
+      (when use-arms (push '(= (arm-cost arms) 30) init-cond))
+
+      ;; obj cost
+      (let ((unique-items (remove-duplicates items))
+            exist-spots unique-spots)
+        (dolist (item (append unique-items (list 'cleaner)))
+          (setq exist-spots (mapcar #'(lambda (x) (car (last (cadr x))))
+                                    (remove-if-not
+                                     #'(lambda (x) (and (eq (car x) '=)
+                                                        (eq (caadr x) 'obj-cost)
+                                                        (eq (cadr (cadr x)) item)))
+                                     init-cond)))
+          (dolist (spot (set-difference spots exist-spots))
+            (push `(= (obj-cost ,item ,spot) 1000) init-cond))))
+
+      ;; move cost
+      (let ((unique-spots (remove-duplicates spots)))
+        (setq init-cond (append init-cond (make-spot-distance
+                                           (append unique-spots (list 'somewhere))))))
+
+      ;; other costs
+      (push '(= (total-cost) 0) init-cond)
+      (push '(= (manip-cost) 10) init-cond)
+      (push '(= (find-cost) 50) init-cond)
+      ;;
+      (send self :initial-condition init-cond)
+      )) ;; append-costs
+  ;;
+  (:decompose-in ()
+    (ros::ros-info ">> [:decompose-in] started")
+    (let* ((init-cond (copy-object (send self :initial-condition)))
+           (goal-cond (copy-object (send self :goal-condition)))
+           (init-insexp (find-sexp init-cond :operator 'in))
+           (goal-insexp (find-sexp goal-cond :operator 'in))
+           in-spots)
+      ;; remove in from sexp
+      ;; append on spot-in sexp
+      ;; add spot-in to objects
+      (dolist (sexp init-insexp)
+        (setq init-cond (remove-sexp init-cond sexp))
+        (push (caddr sexp) in-spots)
+        (setq repspot
+              (read-from-string (string-upcase (format nil "~A-in" (caddr sexp)))))
+        (push `(on ,(cadr sexp) ,repspot) init-cond)
+        (send self :add-object repspot 'spot))
+      (dolist (sexp goal-insexp)
+        (setq goal-cond (remove-sexp goal-cond sexp))
+        (push (caddr sexp) in-spots)
+        (setq repspot
+              (read-from-string (string-upcase (format nil "~A-in" (caddr sexp)))))
+        (push `(on ,(cadr sexp) ,repspot) goal-cond)
+        (send self :add-object repspot 'spot))
+      ;; remap openable operand
+      (let* ((openable-sexp (find-sexp init-cond :operator 'openable))
+             (repsexp (copy-object openable-sexp))
+             (spots (remove-duplicates
+                     (mapcar #'caddr openable-sexp)))
+             repspot)
+        (dolist (sexp openable-sexp)
+          (setq init-cond (remove-sexp init-cond sexp))
+          (setq repspot
+                (read-from-string (string-upcase (format nil "~A-in" (caddr sexp)))))
+          (setq repsexp (replace-symbol repsexp (caddr sexp) repspot)))
+        (setq init-cond (append init-cond repsexp)))
+      ;; duplicate obj-costs
+      (let ((obj-cost-sexp
+             (remove-if-not #'(lambda (x)
+                                (eq (caadr x) 'obj-cost))
+                            (find-sexp init-cond :operator '=)))
+            spot repspot)
+        (dolist (sexp obj-cost-sexp)
+          (setq spot (car (last (cadr sexp))))
+          (when (memq spot in-spots)
+            (setq repspot
+                  (read-from-string (string-upcase (format nil "~A-in" spot))))
+            (push (replace-symbol sexp spot repspot) init-cond))))
+      ;; append move-costs for spot-in
+      (let ((move-cost-sexp
+             (remove-if-not #'(lambda (x)
+                                (eq (caadr x) 'move-cost))
+                            (find-sexp init-cond :operator '=)))
+            from to cost from-in to-in)
+        (dolist (sexp move-cost-sexp)
+          (setq from (cadr (cadr sexp)) to (caddr (cadr sexp))
+                cost (car (last sexp))
+                from-in
+                (read-from-string (string-upcase (format nil "~A-in" from)))
+                to-in
+                (read-from-string (string-upcase (format nil "~A-in" to))))
+          (cond
+           ((and (memq from in-spots)
+                 (memq to in-spots))
+            (push `(= (move-cost ,from ,to-in) ,cost) init-cond)
+            (push `(= (move-cost ,from-in ,to) ,cost) init-cond)
+            (push `(= (move-cost ,from-in ,to-in) ,cost) init-cond))
+           ((memq from in-spots)
+            (push `(= (move-cost ,from-in ,to) ,cost) init-cond))
+           ((memq to in-spots)
+            (push `(= (move-cost ,from ,to-in) ,cost) init-cond)))))
+      ;;
+      (send self :initial-condition init-cond)
+      (send self :goal-condition goal-cond)
+      (ros::ros-info "<< [:decompose-in] end")
+      )) ;; decompose-in
   ) ;; defmethod
 
 (defun prob-tidyup ()
@@ -626,23 +788,12 @@
     prob))
 
 (defun test-prepare ()
-  (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'fuga)))
+  (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'room-domain)))
     (send prob :metric '(minimize (total-cost)))
     (send prob :objects
-          '((room73a1 . spot)
-            (bookshelf . spot)
-            (counter . spot)
-            (kitchen . spot)
-            (sink . spot)
-            (drawer . spot)
-            (dishwasher . spot)
-            (fridge . spot)
+          '(
             (table . spot)
             (start . spot)
-            (book . item)
-            (bowl . item)
-            (bottle . item)
-            (cup . item)
             (larm . arm)
             (rarm . arm)))
     (send prob :initial-condition
@@ -662,7 +813,6 @@
     (pprint (send prob :goal-condition))
     (send prob :resolve
           :robot-at 'kitchen
-          :on '(cup tea bottle)
           :who 'furuta)
     (format t "~%")
     (format t "initial-condition=~%")
@@ -671,6 +821,110 @@
     (pprint (send prob :goal-condition))
     prob))
 
+(defun test-prepare2 ()
+  (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'room-domain)))
+    (send prob :metric '(minimize (total-cost)))
+    (send prob :objects
+          '(
+            (fridge . spot)
+            (fridge-in . spot)
+            (kitchen . spot)
+            (kitchen-in . spot)
+            (plasticbottle . item)
+            (table . spot)
+            (start . spot)
+            (larm . arm)
+            (rarm . arm)))
+    (send prob :initial-condition
+          '((= (find-cost) 50)
+            (= (manip-cost) 10)
+            (= (total-cost) 0)
+            (= (obj-cost cleaner start) 1000)
+            (= (obj-cost cleaner table) 1000)
+            (= (obj-cost cleaner kitchen) 1000)
+            (= (obj-cost cleaner kitchen-in) 1000)
+            (= (obj-cost cleaner fridge) 1000)
+            (= (obj-cost cleaner fridge-in) 1000)
+            (= (obj-cost plasticbottle start) 1000)
+            (= (obj-cost plasticbottle table) 1000)
+            (= (arm-cost rarm) 10)
+            (= (arm-cost larm) 10)
+            (robot-at start)
+            (= (obj-cost plasticbottle kitchen) 767)
+            (= (obj-cost plasticbottle kitchen-in) 767)
+            (= (obj-cost plasticbottle fridge) 801)
+            (= (obj-cost plasticbottle fridge-in) 801)
+            (on plasticbottle kitchen)
+            (on plasticbottle fridge-in)
+            (openable rarm kitchen-in)
+            (openable larm kitchen-in)
+            (placable kitchen)
+            (openable rarm fridge-in)
+            (openable larm fridge-in)
+            (placable fridge)
+            (placable table)
+            (= (move-cost somewhere somewhere) 1000)
+            (= (move-cost start start) 1000)
+            (= (move-cost table table) 1000)
+            (= (move-cost kitchen kitchen) 1000)
+            (= (move-cost kitchen kitchen-in) 1000)
+            (= (move-cost kitchen-in kitchen) 1000)
+            (= (move-cost kitchen-in kitchen-in) 1000)
+            (= (move-cost fridge fridge) 1000)
+            (= (move-cost fridge-in fridge) 1000)
+            (= (move-cost fridge fridge-in) 1000)
+            (= (move-cost fridge-in fridge-in) 1000)
+            (= (move-cost somewhere start) 30)
+            (= (move-cost somewhere table) 30)
+            (= (move-cost somewhere kitchen) 30)
+            (= (move-cost somewhere kitchen-in) 30)
+            (= (move-cost somewhere fridge) 30)
+            (= (move-cost somewhere fridge-in) 30)
+            (= (move-cost start somewhere) 30)
+            (= (move-cost start table) 24)
+            (= (move-cost start kitchen) 30)
+            (= (move-cost start kitchen-in) 30)
+            (= (move-cost start fridge) 25)
+            (= (move-cost start fridge-in) 25)
+            (= (move-cost table somewhere) 30)
+            (= (move-cost table start) 24)
+            (= (move-cost table kitchen) 30)
+            (= (move-cost table kitchen-in) 30)
+            (= (move-cost table fridge) 0)
+            (= (move-cost table fridge-in) 0)
+            (= (move-cost kitchen somewhere) 30)
+            (= (move-cost kitchen start) 30)
+            (= (move-cost kitchen table) 30)
+            (= (move-cost kitchen fridge) 30)
+            (= (move-cost kitchen fridge-in) 30)
+            (= (move-cost kitchen-in somewhere) 30)
+            (= (move-cost kitchen-in start) 30)
+            (= (move-cost kitchen-in table) 30)
+            (= (move-cost kitchen-in fridge) 30)
+            (= (move-cost kitchen-in fridge-in) 30)
+            (= (move-cost fridge somewhere) 30)
+            (= (move-cost fridge start) 25)
+            (= (move-cost fridge table) 0)
+            (= (move-cost fridge kitchen) 30)
+            (= (move-cost fridge kitchen-in) 30)
+            (= (move-cost fridge-in somewhere) 30)
+            (= (move-cost fridge-in start) 25)
+            (= (move-cost fridge-in table) 0)
+            (= (move-cost fridge-in kitchen) 30)
+            (= (move-cost fridge-in kitchen-in) 30)
+            ))
+    (send prob :goal-condition
+          '((on plasticbottle table)))
+    (pr2-init)
+    (plan-task (make-domain) prob :timeout 30 :update nil)))
 
-(test-tidyup)
-(test-prepare)
+
+
+;;(test-tidyup)
+(setq prob (test-prepare))
+(setq dom (make-domain))
+(setq sm (plan-task dom prob :update nil :timeout 30))
+(setq insp (instance state-machine-inspector :init sm))
+(send insp :publish-structure)
+(send insp :publish-all-status)
+;;(setq sm (test-prepare2))
