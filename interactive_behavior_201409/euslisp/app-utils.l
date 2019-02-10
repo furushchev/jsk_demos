@@ -119,7 +119,7 @@
                                                                         (length front-name)))))
                                       front-spots)))
 
-    (ros::ros-info "~A -> ~A" name cand-spots)
+    (ros::ros-debug "~A -> ~A" name cand-spots)
 
     (cond
      ((string= (string-downcase name) "start")
