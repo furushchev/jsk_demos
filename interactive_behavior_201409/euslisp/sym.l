@@ -928,7 +928,13 @@
     (pr2-init)
     (plan-task (make-domain) prob :timeout 30 :update nil)))
 
-
+;; NEED TO RUN BELOW!
+;;
+;; export ROBOT=sim
+;; roslaunch pddl_planner pddl_downward.launch
+;; roslaunch mbtk visualize_log_eng8.launch use_mock:=false rviz:=false
+;; roslaunch semantic_world semantic_world_user.launch
+;;
 
 ;;(setq prob (test-tidyup))
 (setq prob (test-prepare))
