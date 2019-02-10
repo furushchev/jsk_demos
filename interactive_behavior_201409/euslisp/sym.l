@@ -50,8 +50,10 @@
     (dolist (ssexp sexp)
       ;; (warn "ssexp: ~A~%" ssexp)
       (cond
-       ((or (eq (car ssexp) 'and)
-            (eq (car ssexp) 'or))
+       ((and
+         (not (memq operator '(and or)))
+         (or (eq (car ssexp) 'and)
+             (eq (car ssexp) 'or)))
         (setq res (append res
                           (find-sexp (cdr ssexp)
                                      :operator operator :operand operand :test test))))
@@ -329,6 +331,8 @@
     "resolve top-level function"
     ;; WARNING: the order is very severe
     ;;
+    (send self :add-object 'larm 'arm)
+    (send self :add-object 'rarm 'arm)
     ;; resolve from initial observation
     (send self :resolve-robot-at robot-at)
     (send self :resolve-who who)
@@ -636,12 +640,30 @@
     (ros::ros-info ">> [:decompose-in] started")
     (let* ((init-cond (copy-object (send self :initial-condition)))
            (goal-cond (copy-object (send self :goal-condition)))
-           (init-insexp (find-sexp init-cond :operator 'in))
-           (goal-insexp (find-sexp goal-cond :operator 'in))
-           in-spots)
+           (goal-or-insexp (remove-if-not #'(lambda (x)
+                                              (find-sexp (list x) :operator 'in))
+                                          (find-sexp goal-cond :operator 'or)))
+           init-insexp goal-insexp in-spots)
       ;; remove in from sexp
       ;; append on spot-in sexp
       ;; add spot-in to objects
+      (dolist (or-sexp goal-or-insexp)
+        (let (rep)
+          (dolist (sexp (cdr or-sexp))
+            (let ((subrep (copy-object sexp)) spot repspot)
+              (setq spot (car (last sexp))
+                    repspot (read-from-string (string-upcase (format nil "~A-in" spot))))
+              (send self :add-object repspot 'spot)
+              (push (caddr sexp) in-spots)
+              (setq subrep (replace-symbol subrep spot repspot))
+              (setq subrep (replace-symbol subrep 'in 'on))
+              (push subrep rep)))
+          (setq goal-cond (remove-sexp goal-cond or-sexp))
+          (push `(or ,@rep) goal-cond)))
+      ;;
+      (setq init-insexp (find-sexp init-cond :operator 'in))
+      (setq goal-insexp (find-sexp goal-cond :operator 'in))
+      ;;
       (dolist (sexp init-insexp)
         (setq init-cond (remove-sexp init-cond sexp))
         (push (caddr sexp) in-spots)
@@ -742,25 +764,26 @@
     prob))
 
 (defun test-tidyup ()
-  (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'fuga)))
+  (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'room-domain)))
     (send prob :metric '(minimize (total-cost)))
-    (send prob :objects
-          '((room73a1 . spot)
-            (bookshelf . spot)
-            (counter . spot)
-            (kitchen . spot)
-            (sink . spot)
-            (drawer . spot)
-            (dishwasher . spot)
-            (fridge . spot)
-            (table . spot)
-            (start . spot)
-            (book . item)
-            (bowl . item)
-            (bottle . item)
-            (cup . item)
-            (larm . arm)
-            (rarm . arm)))
+    ;; (send prob :objects
+    ;;       '(
+    ;;         (room73a1 . spot)
+    ;;         (bookshelf . spot)
+    ;;         (counter . spot)
+    ;;         (kitchen . spot)
+    ;;         (sink . spot)
+    ;;         (drawer . spot)
+    ;;         (dishwasher . spot)
+    ;;         (fridge . spot)
+    ;;         (table . spot)
+    ;;         (start . spot)
+    ;;         (book . item)
+    ;;         (bowl . item)
+    ;;         (bottle . item)
+    ;;         (cup . item)
+    ;;         (larm . arm)
+    ;;         (rarm . arm)))
     (send prob :initial-condition
           '((in-place ?spot)
             (robot-at ?spot)
@@ -778,7 +801,7 @@
     (pprint (send prob :goal-condition))
     (send prob :resolve
           :robot-at 'kitchen
-          :on '(cup tea bottle)
+          :on '(cup spoon plasticbottle)
           :who 'furuta)
     (format t "~%")
     (format t "initial-condition=~%")
@@ -793,9 +816,7 @@
     (send prob :objects
           '(
             (table . spot)
-            (start . spot)
-            (larm . arm)
-            (rarm . arm)))
+            (start . spot)))
     (send prob :initial-condition
           '((in-place ?spot)
             (robot-at start)
@@ -920,8 +941,8 @@
 
 
 
-;;(test-tidyup)
-(setq prob (test-prepare))
+(setq prob (test-tidyup))
+;;(setq prob (test-prepare))
 (setq dom (make-domain))
 (setq sm (plan-task dom prob :update nil :timeout 30))
 (setq insp (instance state-machine-inspector :init sm))
