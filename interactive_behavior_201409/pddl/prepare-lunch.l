@@ -9,14 +9,17 @@
   (setq *domain* (make-domain))
   (setq *problem* (make-problem :init
                                 '((ROBOT-AT START)
-                                  (ON BOWL DISHWASHER)
-                                  (ON CUP KITCHEN)
-                                  (ON BOTTLE FRIDGE)
+                                  (ON BOWL KITCHEN)
+                                  (ON SPOON KITCHEN)
+                                  (ON CUP SHELF)
+                                  (AVAILABLE SHELF)
                                   )
                                 :goal
-                                '((ON BOWL TABLE)
+                                '(
+                                  (ON BOWL TABLE)
+                                  (ON SPOON TABLE)
                                   (ON CUP TABLE)
-                                  (ON BOTTLE TABLE))
+                                  )
                                 :items
                                 '(CUP BOTTLE BOWL BOOK)
                                 ))

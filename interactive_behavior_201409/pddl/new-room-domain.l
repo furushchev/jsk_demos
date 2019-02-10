@@ -35,7 +35,7 @@
             (OCCUPIED ?AT - spot)
             (SURE-PLACABLE ?OBJ - item ?AT - spot)
             (OPENABLE ?ARM - arm ?AT - spot)
-            (CLEAN)
+            (CLEAN ?AT - spot)
             ))
     (send domain :functions '((total-cost)
                               (move-cost ?FROM ?TO - spot)
@@ -141,15 +141,12 @@
                      :parameters '((?ARM arm) (?AT spot))
                      :precondition '((ONHAND CLEANER ?ARM)
                                      (ROBOT-AT ?AT))
-                     :effect '((CLEAN)
-                               (NOT (ROBOT-AT ?AT))
-                               (ROBOT-AT SOMEWHERE)))
+                     :effect '((CLEAN ?AT)))
            (instance pddl-action :init
                      :name "find-person"
                      :parameters '((?WHO person) (?AT spot))
                      :precondition '((ROBOT-AT ?AT)
-                                     (SEE ?WHO ?AT)
-                                     (PLACABLE ?AT))
+                                     (SEE ?WHO ?AT))
                      :effect '((SURE-SEE ?WHO ?AT)
                                (NOT (SEE ?WHO ?AT))))
            (instance pddl-action :init
@@ -157,16 +154,14 @@
                      :parameters '((?OBJ item) (?ARM arm) (?WHO person) (?AT spot))
                      :precondition '((ONHAND ?OBJ ?ARM)
                                      (ROBOT-AT ?AT)
-                                     (SURE-SEE ?WHO ?AT)
-                                     (PLACABLE ?AT))
+                                     (SURE-SEE ?WHO ?AT))
                      :effect '((NOT (ONHAND ?OBJ ?ARM))
                                (DELIVERED ?OBJ ?WHO)))
            (instance pddl-action :init
                      :name "ask"
                      :parameters '((?WHO person) (?AT spot))
                      :precondition '((ROBOT-AT ?AT)
-                                     (SURE-SEE ?WHO ?AT)
-                                     (PLACABLE ?AT))
+                                     (SURE-SEE ?WHO ?AT))
                      :effect '((ASKED ?WHO)))
            ))
 
@@ -213,8 +208,7 @@
                              :name "find-person_f"
                              :parameters '((?WHO person) (?AT spot))
                              :precondition '((ROBOT-AT ?AT)
-                                             (SEE ?WHO ?AT)
-                                             (PLACABLE ?AT))
+                                             (SEE ?WHO ?AT))
                              :effect '((NOT (SEE ?WHO ?AT))))
                    )))
 
