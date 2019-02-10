@@ -48,7 +48,7 @@
   "Find sexp by key in sexp"
   (let (res)
     (dolist (ssexp sexp)
-      ;; (warn "ssexp: ~A~%" ssexp)
+      (ros::ros-debug "ssexp: ~A" ssexp)
       (cond
        ((and
          (not (memq operator '(and or)))
@@ -331,6 +331,7 @@
     "resolve top-level function"
     ;; WARNING: the order is very severe
     ;;
+    ;; add arm objects
     (send self :add-object 'larm 'arm)
     (send self :add-object 'rarm 'arm)
     ;; resolve from initial observation
@@ -345,6 +346,11 @@
     (send self :resolve-in-place)
     (send self :append-costs)
     (send self :decompose-in)
+    ;; add close door heuristics
+    (send self :goal-condition
+          (append (send self :goal-condition)
+                  '((forall (?at - spot)
+                     (not (open ?at))))))
     t)
   ;;
   (:resolve-robot-at (&optional spot)
@@ -510,7 +516,6 @@
                   (goal-tmpl (find-sexp goal-cond :operand spot))
                   repinit repgoal repsyms)
               ;;
-              ;; (warn "~A ~A ~A ~A ~A~%" sexp item spot tmpl ret)
               (dolist (rep ret)
                 ;; for all candidate (coords . cost) from probabilistic loc-map
                 (let ((repsexp (resolve-item-place item (car rep)))
@@ -522,14 +527,14 @@
                     (unless (memq repsym repsyms)
                       (push repsym repsyms)
                       (send self :add-object repsym 'spot)
-                      (ros::ros-warn "repsexp: ~A init-tmpl: ~A goal-tmpl: ~A"
+                      (ros::ros-debug "repsexp: ~A init-tmpl: ~A goal-tmpl: ~A"
                                      repsexp init-tmpl goal-tmpl)
                       (setq repinittmpl (replace-symbol init-tmpl spot repsym))
                       (setq repgoaltmpl (replace-symbol goal-tmpl spot repsym))
                       (setq reppred (car repsexp))
                       (setq repinittmpl (replace-symbol repinittmpl 'on reppred))
                       (setq repgoaltmpl (replace-symbol repgoaltmpl 'on reppred))
-                      (ros::ros-warn "2 init-tmpl: ~A goal-tmpl: ~A" repinittmpl repgoaltmpl)
+                      (ros::ros-debug "2 init-tmpl: ~A goal-tmpl: ~A" repinittmpl repgoaltmpl)
                       (setq repinit (remove-duplicates (append repinit repinittmpl) :test #'equal))
                       (setq repgoal (remove-duplicates (append repgoal repgoaltmpl) :test #'equal))
                       ;; coeff for obj-cost
@@ -598,6 +603,7 @@
       t)) ;; resolve-in-place
   ;;
   (:append-costs (&key use-arms)
+    (ros::ros-info ">> [:append-costs] started")
     (let* ((init-cond (copy-object (send self :initial-condition)))
            (goal-cond (copy-object (send self :goal-condition)))
            (items (mapcar #'car (remove-if-not #'(lambda (x) (eq (cdr x) 'item))
@@ -634,7 +640,8 @@
       (push '(= (find-cost) 50) init-cond)
       ;;
       (send self :initial-condition init-cond)
-      )) ;; append-costs
+      (ros::ros-info ">> [:append-costs] end")
+      t)) ;; append-costs
   ;;
   (:decompose-in ()
     (ros::ros-info ">> [:decompose-in] started")
@@ -729,11 +736,11 @@
       (send self :initial-condition init-cond)
       (send self :goal-condition goal-cond)
       (ros::ros-info "<< [:decompose-in] end")
-      )) ;; decompose-in
+      t)) ;; decompose-in
   ) ;; defmethod
 
 (defun prob-tidyup ()
-  (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'fuga)))
+  (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'room-domain)))
     (send prob :metric '(minimize (total-cost)))
     (send prob :objects
           '((room73a1 . spot)
@@ -766,24 +773,6 @@
 (defun test-tidyup ()
   (let ((prob (instance pddl-situation-problem :init :name 'hoge :domain 'room-domain)))
     (send prob :metric '(minimize (total-cost)))
-    ;; (send prob :objects
-    ;;       '(
-    ;;         (room73a1 . spot)
-    ;;         (bookshelf . spot)
-    ;;         (counter . spot)
-    ;;         (kitchen . spot)
-    ;;         (sink . spot)
-    ;;         (drawer . spot)
-    ;;         (dishwasher . spot)
-    ;;         (fridge . spot)
-    ;;         (table . spot)
-    ;;         (start . spot)
-    ;;         (book . item)
-    ;;         (bowl . item)
-    ;;         (bottle . item)
-    ;;         (cup . item)
-    ;;         (larm . arm)
-    ;;         (rarm . arm)))
     (send prob :initial-condition
           '((in-place ?spot)
             (robot-at ?spot)
@@ -941,10 +930,10 @@
 
 
 
-(setq prob (test-tidyup))
-;;(setq prob (test-prepare))
+;;(setq prob (test-tidyup))
+(setq prob (test-prepare))
 (setq dom (make-domain))
-(setq sm (plan-task dom prob :update nil :timeout 30))
+(setq sm (plan-task dom prob :update nil :timeout 3))
 (setq insp (instance state-machine-inspector :init sm))
 (send insp :publish-structure)
 (send insp :publish-all-status)
