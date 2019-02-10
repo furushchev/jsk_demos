@@ -551,7 +551,7 @@ Example: (defpreemptrobot pr2) creates `pr2-preempt-interface` and `pr2-init`"
     ))
 
 
-(defun plan-task (domain problem &key (debug) (failed-nodes) (use-cache t) (timeout 10))
+(defun plan-task (domain problem &key (debug) (failed-nodes) (use-cache t) (timeout 10) (update t))
   "Plan action sequence with failure recovery, given domain and problem using PDDL solver.
 This function also supports resume from preempted tasks"
   (let ((prob (copy-object problem))
@@ -590,10 +590,11 @@ This function also supports resume from preempted tasks"
               (merge-goal-states cnd (send prob :goal-condition)))))
     ;;
     ;; update conditions using updaters
-    (let ((ret (update-condition (send prob :initial-condition)
-                                 (send prob :goal-condition))))
-      (send prob :initial-condition (car ret))
-      (send prob :goal-condition (cadr ret)))
+    (when update
+      (let ((ret (update-condition (send prob :initial-condition)
+                                   (send prob :goal-condition))))
+        (send prob :initial-condition (car ret))
+        (send prob :goal-condition (cadr ret))))
     ;;
     (ros::ros-info "planning from ~A" (pformat (send prob :initial-condition)))
     (ros::ros-info "to goal ~A" (pformat (send prob :goal-condition)))
