@@ -5,6 +5,23 @@
 (require :pr2-actionlib "package://interactive_behavior_201409/pddl/pr2-actionlib.l")
 (require :new-room-domain "package://interactive_behavior_201409/pddl/new-room-domain.l")
 
+
+(defun plan ()
+  (setq *domain* (make-domain))
+  (setq *problem* (make-problem :init '((ROBOT-AT START)
+                                        (ON BOTTLE KITCHEN)
+                                        (ON CLEANER DRAWER))
+                                :goal '((CLEAN KITCHEN)
+                                        (ON BOTTLE FRIDGE)
+                                        (ON CLEANER DRAWER))
+                                :items '(BOTTLE)))
+  (setq *sm* (plan-task *domain* *problem* :debug t :use-cache t :timeout 30))
+  (setq *insp* (instance state-machine-inspector :init *sm*))
+  (send *insp* :publish-structure)
+  (send *insp* :publish-all-status)
+  *insp*)
+
+
 (defun run ()
   (setq userdata '(nil))
   (setq *pos-cleaner* nil)
